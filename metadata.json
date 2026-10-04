@@ -1,0 +1,6 @@
+{
+  "name": "Stamp Duty and Registration Fees Calculator",
+  "description": "Comprehensive property valuation, Stamp Duty, and Registration Fees calculator for Open Plots, Buildings, Flats, and Lease Deeds with unit conversions and government guideline rates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
