@@ -1,91 +1,111 @@
 name: Build Windows EXE
 
 on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
-  build-exe:
+  build-windows:
+    name: Build Windows Desktop EXE
     runs-on: windows-latest
 
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install project dependencies
-        run: npm install --legacy-peer-deps
+      - name: Install Project Dependencies
+        run: |
+          if (Test-Path package-lock.json) {
+            npm ci --legacy-peer-deps
+          } else {
+            npm install --legacy-peer-deps
+          }
 
-      - name: Build web application
+      - name: Build Web Application
         run: npm run build
 
-      - name: Create Electron main process
-        shell: pwsh
+      - name: Setup Electron and Package Configuration
         run: |
-          $electronMain = @'
+          npm install --legacy-peer-deps -D electron electron-builder
+
+          if (!(Test-Path electron.js)) {
+            @'
           const { app, BrowserWindow } = require('electron');
           const path = require('path');
 
-          const isDev = !app.isPackaged;
-
-          let mainWindow;
-
           function createWindow() {
-            mainWindow = new BrowserWindow({
-              width: 1200,
-              height: 800,
+            const win = new BrowserWindow({
+              width: 1280,
+              height: 850,
+              minWidth: 800,
+              minHeight: 600,
+              title: 'Stamp Duty and Registration Fees Calculator',
+              autoHideMenuBar: true,
               webPreferences: {
-                preload: path.join(__dirname, 'preload.js')
-              }
+                nodeIntegration: false,
+                contextIsolation: true,
+              },
             });
 
-            const startUrl = isDev
-              ? 'http://localhost:3000'
-              : `file://${path.join(__dirname, '../dist/index.html')}`;
-
-            mainWindow.loadURL(startUrl);
-
-            if (isDev) {
-              mainWindow.webContents.openDevTools();
-            }
-
-            mainWindow.on('closed', () => {
-              mainWindow = null;
-            });
+            win.loadFile(path.join(__dirname, 'dist', 'index.html'));
           }
 
-          app.on('ready', createWindow);
+          app.whenReady().then(createWindow);
 
           app.on('window-all-closed', () => {
-            if (process.platform !== 'darwin') {
-              app.quit();
-            }
+            if (process.platform !== 'darwin') app.quit();
           });
+          '@ | Out-File -FilePath electron.js -Encoding utf8
+          }
 
-          app.on('activate', () => {
-            if (mainWindow === null) {
-              createWindow();
-            }
-          });
-          '@
+          node -e @"
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.main = 'electron.js';
+          pkg.author = pkg.author || 'Stamp Duty Calculator';
+          pkg.description = pkg.description || 'Property Valuation & Stamp Duty Calculator';
+          pkg.build = {
+            appId: 'com.stampduty.calculator',
+            productName: 'Stamp Duty Calculator',
+            directories: {
+              output: 'release'
+            },
+            win: {
+              target: ['nsis', 'portable']
+            },
+            nsis: {
+              oneClick: false,
+              allowToChangeInstallationDirectory: true,
+              createDesktopShortcut: true,
+              createStartMenuShortcut: true
+            },
+            files: [
+              'dist/**/*',
+              'electron.js'
+            ]
+          };
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "@
 
-          New-Item -ItemType Directory -Path ".\public" -Force | Out-Null
-          Set-Content -Path ".\public\electron.js" -Value $electronMain -Encoding UTF8
+      - name: Build Windows EXE
+        run: npx electron-builder --win --x64
 
-      - name: Update package.json with Electron config
-        shell: pwsh
-        run: |
-          $packageJson = Get-Content 'package.json' -Raw | ConvertFrom-Json
-
-          $packageJson | Add-Member -NotePropertyName 'description' -NotePropertyValue 'Simple Stamp Duty Calculator' -Force
-          $packageJson | Add-Member -NotePropertyName 'author' -NotePropertyValue 'Your Name' -Force
-          $packageJson | Add-Member -NotePropertyName 'homepage' -NotePropertyValue './' -Force
-          $packageJson | Add-Member -NotePropertyName 'main' -NotePropertyValue 'public/electron.js' -Force
-
-          $packageJson | ConvertTo-Json -Depth 10 | Set-Content 'package.json' -Encoding UTF8
-
-      - name: Build EXE with electron-builder
-        run: npx electron-builder --win --publish never
+      - name: Upload Windows EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stamp-duty-calculator-windows-exe
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,9 @@
+{
+  "appId": "com.stampduty.calculator",
+  "appName": "Stamp Duty Calculator",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
