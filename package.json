@@ -5,6 +5,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "./",
+  "main": "public/electron.js",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
@@ -31,11 +33,12 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "electron": "^31.7.0",
+    "electron-builder": "^24.13.0",
+    "electron-is-dev": "^3.0.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vite-plugin-pwa": "^2.0.0",
-    "electron": "^VERSION",
-    "electron-builder": "^VERSION"
+    "vite-plugin-pwa": "^2.0.0"
   }
 }
