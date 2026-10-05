@@ -20,6 +20,7 @@ import { PrintChallanModal } from './components/PrintChallanModal';
 import { OfflineBackupModal } from './components/OfflineBackupModal';
 import { PermissionsModal } from './components/PermissionsModal';
 import { ExportPackagingModal } from './components/ExportPackagingModal';
+import { SavedCalculationsModal } from './components/SavedCalculationsModal';
 import { ThemeLanguageProvider, useThemeLanguage } from './context/ThemeLanguageContext';
 import { PlatformProvider, usePlatform } from './context/PlatformContext';
 import {
@@ -27,6 +28,7 @@ import {
   saveWorkingSession,
   loadWorkingSession,
 } from './utils/offlineBackup';
+import { getSavedCalculations } from './utils/savedCalculations';
 
 const initialPlotState: PlotState = {
   landArea: '',
@@ -43,6 +45,8 @@ const initialPlotState: PlotState = {
   registrationFeeRate: '',
   additionalCessPercent: 0,
   fixedCharges: 0,
+  scanningFee: '',
+  advocateFee: 10000,
 };
 
 const initialBuildingState: BuildingState = {
@@ -68,6 +72,8 @@ const initialBuildingState: BuildingState = {
   registrationFeeRate: '',
   additionalCessPercent: 0,
   fixedCharges: 0,
+  scanningFee: '',
+  advocateFee: 10000,
 };
 
 function MainApp() {
@@ -84,16 +90,30 @@ function MainApp() {
   const [isOfflineBackupOpen, setIsOfflineBackupOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const [isPackagingOpen, setIsPackagingOpen] = useState(false);
+  const [isSavedCalculationsOpen, setIsSavedCalculationsOpen] = useState(false);
+  const [savedCalculationsCount, setSavedCalculationsCount] = useState(0);
 
   const [printChallanData, setPrintChallanData] = useState<{
     isOpen: boolean;
     result: ValuationResult | null;
     title: string;
+    tab: ActiveTab;
+    currentState: any;
   }>({
     isOpen: false,
     result: null,
     title: '',
+    tab: 'plot',
+    currentState: null,
   });
+
+  const refreshSavedCount = () => {
+    setSavedCalculationsCount(getSavedCalculations().length);
+  };
+
+  useEffect(() => {
+    refreshSavedCount();
+  }, [isSavedCalculationsOpen, printChallanData.isOpen]);
 
   // Restore working session on startup if available
   useEffect(() => {
@@ -127,12 +147,30 @@ function MainApp() {
     saveWorkingSession(payload);
   }, [plotState, buildingState, activeTab, detectedPlatform]);
 
-  const handleOpenPrintModal = (result: ValuationResult, title: string) => {
+  const handleOpenPrintModal = (
+    result: ValuationResult,
+    title: string,
+    tab: ActiveTab = 'plot',
+    state: any = null
+  ) => {
     setPrintChallanData({
       isOpen: true,
       result,
       title,
+      tab,
+      currentState: state || (tab === 'plot' ? plotState : buildingState),
     });
+  };
+
+  const handleEditCalculation = (tab: ActiveTab, savedState: any) => {
+    setActiveTab(tab);
+    if (savedState) {
+      if (tab === 'plot') {
+        setPlotState(savedState);
+      } else if (tab === 'building') {
+        setBuildingState(savedState);
+      }
+    }
   };
 
   const handleRestoreBackup = (payload: AppBackupPayload) => {
@@ -160,6 +198,8 @@ function MainApp() {
         onOpenOfflineBackup={() => setIsOfflineBackupOpen(true)}
         onOpenPermissions={() => setIsPermissionsOpen(true)}
         onOpenPackaging={() => setIsPackagingOpen(true)}
+        onOpenSavedCalculations={() => setIsSavedCalculationsOpen(true)}
+        savedCalculationsCount={savedCalculationsCount}
       />
 
       {/* Main Container - Optimized for Mobile (Portrait + Landscape) & PC (Resizable Windows) */}
@@ -188,10 +228,14 @@ function MainApp() {
         )}
 
         {/* Tab 3: Flat */}
-        {activeTab === 'flat' && <FlatCalculator />}
+        {activeTab === 'flat' && (
+          <FlatCalculator onOpenPrintModal={handleOpenPrintModal} />
+        )}
 
         {/* Tab 4: Lease */}
-        {activeTab === 'lease' && <LeaseCalculator />}
+        {activeTab === 'lease' && (
+          <LeaseCalculator onOpenPrintModal={handleOpenPrintModal} />
+        )}
       </main>
 
       {/* Cross-platform Footer */}
@@ -218,10 +262,35 @@ function MainApp() {
       <PrintChallanModal
         isOpen={printChallanData.isOpen}
         onClose={() =>
-          setPrintChallanData({ isOpen: false, result: null, title: '' })
+          setPrintChallanData({
+            isOpen: false,
+            result: null,
+            title: '',
+            tab: 'plot',
+            currentState: null,
+          })
         }
         result={printChallanData.result}
         tabTitle={printChallanData.title}
+        tab={printChallanData.tab}
+        currentState={printChallanData.currentState}
+        onOpenSavedModal={() => setIsSavedCalculationsOpen(true)}
+      />
+
+      <SavedCalculationsModal
+        isOpen={isSavedCalculationsOpen}
+        onClose={() => setIsSavedCalculationsOpen(false)}
+        onViewCalculation={(result, tabTitle, tab, state) => {
+          setIsSavedCalculationsOpen(false);
+          setPrintChallanData({
+            isOpen: true,
+            result,
+            title: tabTitle,
+            tab,
+            currentState: state,
+          });
+        }}
+        onEditCalculation={handleEditCalculation}
       />
 
       <OfflineBackupModal

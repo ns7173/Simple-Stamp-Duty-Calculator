@@ -5,6 +5,7 @@ import {
   AreaUnit,
   RateUnit,
   FloorItem,
+  ActiveTab,
 } from '../types/calculator';
 import {
   AREA_UNITS_CONFIG,
@@ -30,7 +31,7 @@ interface Props {
   state: BuildingState;
   onChange: (newState: BuildingState) => void;
   onReset: () => void;
-  onOpenPrintModal: (result: ValuationResult, title: string) => void;
+  onOpenPrintModal: (result: ValuationResult, title: string, tab?: ActiveTab, state?: any) => void;
 }
 
 export const BuildingCalculator: React.FC<Props> = ({
@@ -150,7 +151,9 @@ export const BuildingCalculator: React.FC<Props> = ({
 
     const stampDutyAmount = (stampDutyApplicableBase * stampDutyRateNum) / 100;
     const registrationFeeAmount = (registrationFeeApplicableBase * registrationFeeRateNum) / 100;
-    const grandTotal = stampDutyAmount + registrationFeeAmount;
+    const scanningFeeNum = typeof state.scanningFee === 'number' ? state.scanningFee : 0;
+    const advocateFeeNum = typeof state.advocateFee === 'number' ? state.advocateFee : (state.advocateFee === '' ? 0 : 10000);
+    const grandTotal = stampDutyAmount + registrationFeeAmount + scanningFeeNum + advocateFeeNum;
 
     return {
       landAreaOriginal: landAreaNumber,
@@ -186,6 +189,8 @@ export const BuildingCalculator: React.FC<Props> = ({
       cessRate: 0,
       cessAmount: 0,
       fixedCharges: 0,
+      scanningFee: scanningFeeNum,
+      advocateFee: advocateFeeNum,
       grandTotalCharges: grandTotal,
     };
   }, [
@@ -195,6 +200,8 @@ export const BuildingCalculator: React.FC<Props> = ({
     state.stampDutyRate,
     state.registrationFeeBase,
     state.registrationFeeRate,
+    state.scanningFee,
+    state.advocateFee,
     landAreaNumber,
     state.landAreaUnit,
     landAreaInRateUnit,
@@ -312,7 +319,7 @@ export const BuildingCalculator: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   Land Area
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
                   <input
                     type="number"
                     min="0"
@@ -325,12 +332,12 @@ export const BuildingCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.landAreaUnit}
                     onChange={(e) => updateField('landAreaUnit', e.target.value as AreaUnit)}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-2.5 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
                     {AREA_UNITS_CONFIG.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -346,8 +353,8 @@ export const BuildingCalculator: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   Land Guideline Rate
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 px-2.5 py-2 text-sm font-semibold">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -362,12 +369,12 @@ export const BuildingCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-2.5 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.landGuidelineRateUnit}
                     onChange={(e) => updateField('landGuidelineRateUnit', e.target.value as RateUnit)}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-2 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
                     {RATE_UNITS_CONFIG.map((ru) => (
                       <option key={ru.id} value={ru.id}>
@@ -470,7 +477,7 @@ export const BuildingCalculator: React.FC<Props> = ({
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                       Complete Constructed Area
                     </label>
-                    <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
+                    <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
                       <input
                         type="number"
                         min="0"
@@ -483,17 +490,17 @@ export const BuildingCalculator: React.FC<Props> = ({
                             e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                           )
                         }
-                        className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                        className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
                       <select
                         value={state.completeConstructionUnit}
                         onChange={(e) =>
                           updateField('completeConstructionUnit', e.target.value as 'sqft' | 'sqmt')
                         }
-                        className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                        className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                       >
-                        <option value="sqft">sq.ft</option>
-                        <option value="sqmt">sq.mt</option>
+                        <option value="sqft">Sq.ft</option>
+                        <option value="sqmt">Sq.mt</option>
                       </select>
                     </div>
                   </div>
@@ -503,8 +510,8 @@ export const BuildingCalculator: React.FC<Props> = ({
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                       Construction Guideline Rate
                     </label>
-                    <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                      <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 px-3 py-2 text-sm font-semibold">
+                    <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                      <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                         Rs.
                       </div>
                       <input
@@ -519,17 +526,17 @@ export const BuildingCalculator: React.FC<Props> = ({
                             e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                           )
                         }
-                        className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                        className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
                       <select
                         value={state.defaultConstructionRateUnit}
                         onChange={(e) =>
                           updateField('defaultConstructionRateUnit', e.target.value as 'sqft' | 'sqmt')
                         }
-                        className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                        className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                       >
-                        <option value="sqft">Rs. per sq.ft</option>
-                        <option value="sqmt">Rs. per sq.mt</option>
+                        <option value="sqft">/ Sq.ft</option>
+                        <option value="sqmt">/ Sq.mt</option>
                       </select>
                     </div>
                     {typeof state.defaultConstructionRate === 'number' && state.defaultConstructionRate > 0 && (
@@ -739,8 +746,8 @@ export const BuildingCalculator: React.FC<Props> = ({
             </div>
 
             <div>
-              <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 px-3.5 py-2.5 text-sm font-semibold">
+              <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                   Rs.
                 </div>
                 <input
@@ -755,10 +762,10 @@ export const BuildingCalculator: React.FC<Props> = ({
                       e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                     )
                   }
-                  className="flex-1 px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                  className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
                 {considerationNumber > 0 && (
-                  <div className="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-500 border-l border-slate-200 dark:border-slate-700 flex items-center">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700 flex items-center shrink-0">
                     {formatINRShort(considerationNumber)}
                   </div>
                 )}
@@ -821,8 +828,14 @@ export const BuildingCalculator: React.FC<Props> = ({
         <div className="lg:col-span-5 space-y-4">
           <CalculationSummaryCard
             title="Building (Land + Construction)"
+            tab="building"
             result={result}
-            onOpenPrintModal={() => onOpenPrintModal(result, 'Building (House/Shop/Godown)')}
+            currentState={state}
+            scanningFee={state.scanningFee}
+            onChangeScanningFee={(val) => updateField('scanningFee', val)}
+            advocateFee={state.advocateFee}
+            onChangeAdvocateFee={(val) => updateField('advocateFee', val)}
+            onOpenPrintModal={(res, titleName, tabName, stateObj) => onOpenPrintModal(res, titleName, tabName, stateObj)}
           />
         </div>
       </div>

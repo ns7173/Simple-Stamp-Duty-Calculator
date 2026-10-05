@@ -1,6 +1,7 @@
 export type AreaUnit = 'sqft' | 'sqmt' | 'hectare' | 'acre' | 'dismil';
 export type RateUnit = 'sqmt' | 'sqft' | 'hectare' | 'acre';
 export type CalculationBase = 'govt' | 'consideration' | 'higher';
+export type ActiveTab = 'plot' | 'building' | 'flat' | 'lease';
 
 export interface UnitDefinition {
   id: AreaUnit;
@@ -33,6 +34,8 @@ export interface PlotState {
   registrationFeeRate: number | ''; // Registration Fee %
   additionalCessPercent: number; // Surcharge / Local Cess %
   fixedCharges: number; // Fixed fee in Rs.
+  scanningFee?: number | ''; // Scanning fee in Rs.
+  advocateFee?: number | ''; // Advocate fee in Rs. (default: 10,000)
 }
 
 // Tab 2: Building State
@@ -71,6 +74,8 @@ export interface BuildingState {
   registrationFeeRate: number | '';
   additionalCessPercent: number;
   fixedCharges: number;
+  scanningFee?: number | '';
+  advocateFee?: number | '';
 }
 
 // Tab 3: Flat State
@@ -110,6 +115,8 @@ export interface FlatState {
   registrationFeeRate: number; // Registration Fee %
   additionalCessPercent: number;
   fixedCharges: number;
+  scanningFee?: number | '';
+  advocateFee?: number | '';
 }
 
 // Tab 4: Lease State
@@ -186,6 +193,8 @@ export interface ValuationResult {
   cessRate: number;
   cessAmount: number;
   fixedCharges: number;
+  scanningFee?: number;
+  advocateFee?: number;
 
-  grandTotalCharges: number; // Stamp Duty + Reg Fee + Cess + Fixed
+  grandTotalCharges: number; // Stamp Duty + Reg Fee + Cess + Fixed + Scanning + Advocate
 }

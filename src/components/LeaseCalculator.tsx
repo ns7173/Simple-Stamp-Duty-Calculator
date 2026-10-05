@@ -6,14 +6,13 @@ import {
 } from '../utils/leaseCalculator';
 export type { LeaseInputs };
 import { formatINR, numberToIndianWords } from '../utils/units';
+import { ValuationResult, ActiveTab } from '../types/calculator';
+import { CalculationSummaryCard } from './CalculationSummaryCard';
 import {
   FileText,
   Calendar,
   RotateCcw,
   Sparkles,
-  Copy,
-  Check,
-  Receipt,
   Calculator,
   Info,
   Layers,
@@ -34,9 +33,15 @@ const BLANK_LEASE_INPUTS: LeaseInputs = {
   premium: '',
   optionFor1to5Years: 'rent_maint',
   rounding: true,
+  scanningFee: '',
+  advocateFee: 10000,
 };
 
-export const LeaseCalculator: React.FC = () => {
+interface Props {
+  onOpenPrintModal?: (result: ValuationResult, title: string, tab: ActiveTab, state: any) => void;
+}
+
+export const LeaseCalculator: React.FC<Props> = ({ onOpenPrintModal }) => {
   // All data is blank until user feeds the data
   const [inputs, setInputs] = useState<LeaseInputs>(BLANK_LEASE_INPUTS);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -68,6 +73,55 @@ export const LeaseCalculator: React.FC = () => {
       leaseEndDate: calculatedEndDate || inputs.leaseEndDate,
     });
   }, [inputs, calculatedEndDate]);
+
+  const leaseValuationResult: ValuationResult = useMemo(() => {
+    const scanningFeeNum = typeof inputs.scanningFee === 'number' ? inputs.scanningFee : 0;
+    const advocateFeeNum = typeof inputs.advocateFee === 'number' ? inputs.advocateFee : (inputs.advocateFee === '' ? 0 : 10000);
+    const grandTotal = result.total_payable + scanningFeeNum + advocateFeeNum;
+
+    return {
+      landAreaOriginal: 0,
+      landAreaUnit: 'sqft',
+      landAreaInRateUnit: 0,
+      landGuidelineRate: 0,
+      landRateUnit: 'sqmt',
+      landGovtValueRaw: 0,
+      landDiscountAmount: 0,
+      landGovtValueNet: 0,
+      hasConstruction: false,
+      constructionAreaOriginal: 0,
+      constructionAreaUnit: 'sqft',
+      constructionGuidelineRate: 0,
+      constructionRateUnit: 'sqft',
+      constructionGovtValueRaw: 0,
+      constructionConcessionAmount: 0,
+      constructionGovtValueNet: 0,
+      extrasGovtValue: 0,
+      totalGovtValue: result.avg_annual_rent,
+      considerationValue:
+        typeof inputs.startingRent === 'number' && typeof inputs.tenureYears === 'number'
+          ? (inputs.rentFrequency === 'monthly'
+              ? inputs.startingRent * 12 * inputs.tenureYears
+              : inputs.startingRent * inputs.tenureYears)
+          : result.avg_annual_rent,
+      stampDutyBaseType: 'govt',
+      stampDutyApplicableBase: result.avg_annual_rent_with_maint || result.avg_annual_rent,
+      stampDutyBaseFormula: result.formula_plain || result.applicable_slab,
+      registrationFeeBaseType: 'govt',
+      registrationFeeApplicableBase: result.avg_annual_rent_with_maint || result.avg_annual_rent,
+      registrationFeeBaseFormula: result.formula_plain || result.applicable_slab,
+      stampDutyRate: result.duration_years && result.duration_years <= 5 ? 2 : 5,
+      stampDutyAmount: result.stamp_duty,
+      registrationFeeRate: result.duration_years && result.duration_years <= 5 ? 0.75 : 1.25,
+      registrationFeeAmount: result.registration_fee,
+      cessRate: 0,
+      cessAmount: 0,
+      fixedCharges: 0,
+      scanningFee: scanningFeeNum,
+      advocateFee: advocateFeeNum,
+      grandTotalCharges: grandTotal,
+    };
+  }, [result, inputs.scanningFee, inputs.advocateFee]);
 
   const hasEnteredData = typeof inputs.tenureYears === 'number' && inputs.tenureYears > 0 && typeof inputs.startingRent === 'number' && inputs.startingRent > 0;
 
@@ -247,8 +301,8 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   Rent Amount
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -263,16 +317,16 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   {/* Monthly selected by default */}
                   <select
                     value={inputs.rentFrequency}
                     onChange={(e) => updateField('rentFrequency', e.target.value as 'monthly' | 'annual')}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer font-semibold"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="monthly">per Month</option>
-                    <option value="annual">per Year</option>
+                    <option value="monthly">/ Month</option>
+                    <option value="annual">/ Year</option>
                   </select>
                 </div>
                 {typeof inputs.startingRent === 'number' && inputs.startingRent > 0 && (
@@ -405,8 +459,8 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   Maintenance Charges (Optional)
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -421,16 +475,16 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   {/* Select Monthly or Yearly */}
                   <select
                     value={inputs.maintenanceFrequency}
                     onChange={(e) => updateField('maintenanceFrequency', e.target.value as 'monthly' | 'annual')}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-2.5 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer font-semibold"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="monthly">per Month</option>
-                    <option value="annual">per Year</option>
+                    <option value="monthly">/ Month</option>
+                    <option value="annual">/ Year</option>
                   </select>
                 </div>
                 {typeof inputs.maintenanceAmount === 'number' && inputs.maintenanceAmount > 0 && (
@@ -445,8 +499,8 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   One-Time Premium / Advance (Optional)
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -461,7 +515,7 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 {typeof inputs.premium === 'number' && inputs.premium > 0 && (
@@ -522,142 +576,62 @@ TOTAL PAYABLE: ${formatINR(result.total_payable)}
           </div>
         </div>
 
-        {/* Right Column: Simple Clean Output Summary */}
+        {/* Right Column: Unified Output Dues & Summary */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Top Banner Card: Total Payable */}
-          <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-base text-white">Total Payable Dues</h3>
-              </div>
-
-              {hasEnteredData && (
-                <button
-                  type="button"
-                  onClick={handleCopySummary}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                >
-                  {copiedSummary ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Summary</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-800">
-              <span className="text-xs text-indigo-300 font-semibold uppercase tracking-wider block">
-                Total Amount to Pay
-              </span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                {formatINR(result.total_payable)}
-              </div>
-              <div className="text-xs text-indigo-200/90 italic mt-1">
-                {result.total_payable > 0
-                  ? numberToIndianWords(result.total_payable)
-                  : 'Enter Lease Tenure and Rent Amount to calculate'}
-              </div>
-            </div>
-
-            {/* Sub-breakdown: Stamp Duty & Registration Fee */}
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/80">
-              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <span className="text-xs text-slate-400 block font-semibold">
-                  Stamp Duty
-                </span>
-                <span className="text-lg font-bold text-white block mt-1">
-                  {formatINR(result.stamp_duty)}
-                </span>
-                {result.stamp_duty > 0 && (
-                  <span className="text-[10px] text-slate-400 italic block mt-0.5">
-                    {numberToIndianWords(result.stamp_duty)}
-                  </span>
-                )}
-              </div>
-              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <span className="text-xs text-slate-400 block font-semibold">
-                  Registration Fee
-                </span>
-                <span className="text-lg font-bold text-white block mt-1">
-                  {formatINR(result.registration_fee)}
-                </span>
-                {result.registration_fee > 0 && (
-                  <span className="text-[10px] text-slate-400 italic block mt-0.5">
-                    {numberToIndianWords(result.registration_fee)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Simple Overview Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3 text-xs">
-            <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">
-              <Calculator className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Lease Summary Overview</span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>Lease Tenure:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {inputs.tenureYears ? `${inputs.tenureYears} Years` : '—'}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>Agreement Period:</span>
-              <span className="font-medium text-slate-900 dark:text-white">
-                {inputs.leaseStartDate && calculatedEndDate
-                  ? `${inputs.leaseStartDate} to ${calculatedEndDate}`
-                  : '—'}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>Average Annual Rent:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {formatINR(result.avg_annual_rent)}
-              </span>
-            </div>
-
-            {result.maintenance_per_year > 0 && (
-              <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-                <span>Maintenance Charges:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {formatINR(result.maintenance_per_year)}/yr
-                  {inputs.maintenanceFrequency === 'monthly' && typeof inputs.maintenanceAmount === 'number' && (
-                    <span className="text-[11px] text-slate-500 font-normal ml-1">
-                      ({formatINR(inputs.maintenanceAmount)}/mo)
-                    </span>
-                  )}
-                </span>
-              </div>
-            )}
-
-            {result.premium > 0 && (
-              <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-                <span>One-Time Premium:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {formatINR(result.premium)}
-                </span>
-              </div>
-            )}
-
-            <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800 font-extrabold text-sm text-slate-900 dark:text-white">
-              <span>Total Payable:</span>
-              <span className="text-indigo-600 dark:text-indigo-400">
-                {formatINR(result.total_payable)}
-              </span>
-            </div>
-          </div>
+          <CalculationSummaryCard
+            title="Lease / Rent Agreement (पट्टा विलेख)"
+            tab="lease"
+            result={leaseValuationResult}
+            currentState={inputs}
+            onOpenPrintModal={(res, titleName, tabName, stateObj) => onOpenPrintModal?.(res, titleName, tabName, stateObj)}
+            scanningFee={inputs.scanningFee}
+            onChangeScanningFee={(val) => updateField('scanningFee', val)}
+            advocateFee={inputs.advocateFee}
+            onChangeAdvocateFee={(val) => updateField('advocateFee', val)}
+            overviewTitle="पट्टा / किरायानामा सारांश (Lease Overview)"
+            overviewItems={[
+              {
+                label: 'Lease Tenure / पट्टा अवधि:',
+                value: inputs.tenureYears ? `${inputs.tenureYears} Years` : '—',
+              },
+              {
+                label: 'Agreement Period / अनुबंध अवधि:',
+                value:
+                  inputs.leaseStartDate && calculatedEndDate
+                    ? `${inputs.leaseStartDate} to ${calculatedEndDate}`
+                    : '—',
+              },
+              {
+                label: 'Starting Rent / शुरुआती किराया:',
+                value:
+                  typeof inputs.startingRent === 'number' && inputs.startingRent > 0
+                    ? `${formatINR(inputs.startingRent)} / ${inputs.rentFrequency === 'monthly' ? 'माह' : 'वर्ष'}`
+                    : '—',
+              },
+              {
+                label: 'Average Annual Rent (औसत वार्षिक किराया):',
+                value: formatINR(result.avg_annual_rent),
+                isBold: true,
+                isHighlight: true,
+              },
+              ...(result.maintenance_per_year > 0
+                ? [
+                    {
+                      label: 'Maintenance Charges / रख-रखाव शुल्क:',
+                      value: `${formatINR(result.maintenance_per_year)}/वर्ष`,
+                    },
+                  ]
+                : []),
+              ...(result.premium > 0
+                ? [
+                    {
+                      label: 'One-Time Premium / अग्रिम राशि:',
+                      value: formatINR(result.premium),
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       </div>
     </div>

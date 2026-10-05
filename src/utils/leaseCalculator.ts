@@ -24,6 +24,8 @@ export interface LeaseInputs {
   premium: number | ''; // blank by default
   optionFor1to5Years: 'rent_maint' | 'premium'; // Option A (rent+maint) or Option B (premium)
   rounding: boolean;
+  scanningFee?: number | '';
+  advocateFee?: number | '';
 }
 
 export interface LeaseCalculationResult {

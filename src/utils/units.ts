@@ -17,18 +17,18 @@ export const RATE_UNIT_TO_SQMT: Record<RateUnit, number> = {
 };
 
 export const AREA_UNITS_CONFIG = [
-  { id: 'sqft' as AreaUnit, label: 'Square Feet (sq.ft)', short: 'sqft', factorDesc: '1 sq.ft = 0.0929 sq.mt' },
-  { id: 'sqmt' as AreaUnit, label: 'Square Metres (sq.mt)', short: 'sqmt', factorDesc: '1 sq.mt = 10.764 sq.ft' },
-  { id: 'hectare' as AreaUnit, label: 'Hectare (ha)', short: 'Hectare', factorDesc: '1 Hectare = 10,000 sq.mt (2.47 Acres)' },
-  { id: 'acre' as AreaUnit, label: 'Acre (ac)', short: 'Acre', factorDesc: '1 Acre = 4,046.86 sq.mt (100 Dismil)' },
-  { id: 'dismil' as AreaUnit, label: 'Dismil / Decimal', short: 'Dismil', factorDesc: '1 Dismil = 435.6 sq.ft (1/100 Acre)' },
+  { id: 'sqft' as AreaUnit, label: 'Sq.ft (वर्गफीट)', short: 'Sq.ft', factorDesc: '1 sq.ft = 0.0929 sq.mt' },
+  { id: 'sqmt' as AreaUnit, label: 'Sq.mt (वर्गमीटर)', short: 'Sq.mt', factorDesc: '1 sq.mt = 10.764 sq.ft' },
+  { id: 'hectare' as AreaUnit, label: 'Hectare (हेक्टेयर)', short: 'Hectare', factorDesc: '1 Hectare = 10,000 sq.mt (2.47 Acres)' },
+  { id: 'acre' as AreaUnit, label: 'Acre (एकड़)', short: 'Acre', factorDesc: '1 Acre = 4,046.86 sq.mt (100 Dismil)' },
+  { id: 'dismil' as AreaUnit, label: 'Dismil (डिसमिल)', short: 'Dismil', factorDesc: '1 Dismil = 435.6 sq.ft (1/100 Acre)' },
 ];
 
 export const RATE_UNITS_CONFIG = [
-  { id: 'sqmt' as RateUnit, label: 'Rs. per sq.mt', perLabel: '/sq.mt' },
-  { id: 'sqft' as RateUnit, label: 'Rs. per sq.ft', perLabel: '/sq.ft' },
-  { id: 'hectare' as RateUnit, label: 'Rs. per Hectare', perLabel: '/Hectare' },
-  { id: 'acre' as RateUnit, label: 'Rs. per Acre', perLabel: '/Acre' },
+  { id: 'sqft' as RateUnit, label: '/ Sq.ft', perLabel: '/ Sq.ft' },
+  { id: 'sqmt' as RateUnit, label: '/ Sq.mt', perLabel: '/ Sq.mt' },
+  { id: 'hectare' as RateUnit, label: '/ Hectare', perLabel: '/ Hectare' },
+  { id: 'acre' as RateUnit, label: '/ Acre', perLabel: '/ Acre' },
 ];
 
 /**

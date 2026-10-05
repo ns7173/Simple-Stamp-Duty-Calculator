@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PlotState, ValuationResult, AreaUnit, RateUnit } from '../types/calculator';
+import { PlotState, ValuationResult, AreaUnit, RateUnit, ActiveTab } from '../types/calculator';
 import {
   AREA_UNITS_CONFIG,
   RATE_UNITS_CONFIG,
@@ -17,7 +17,7 @@ interface Props {
   state: PlotState;
   onChange: (newState: PlotState) => void;
   onReset: () => void;
-  onOpenPrintModal: (result: ValuationResult, title: string) => void;
+  onOpenPrintModal: (result: ValuationResult, title: string, tab?: ActiveTab, state?: any) => void;
 }
 
 export const PlotCalculator: React.FC<Props> = ({
@@ -86,7 +86,9 @@ export const PlotCalculator: React.FC<Props> = ({
 
     const stampDutyAmount = (stampDutyApplicableBase * stampDutyRateNum) / 100;
     const registrationFeeAmount = (registrationFeeApplicableBase * registrationFeeRateNum) / 100;
-    const grandTotal = stampDutyAmount + registrationFeeAmount;
+    const scanningFeeNum = typeof state.scanningFee === 'number' ? state.scanningFee : 0;
+    const advocateFeeNum = typeof state.advocateFee === 'number' ? state.advocateFee : (state.advocateFee === '' ? 0 : 10000);
+    const grandTotal = stampDutyAmount + registrationFeeAmount + scanningFeeNum + advocateFeeNum;
 
     return {
       landAreaOriginal: areaNumber,
@@ -121,6 +123,8 @@ export const PlotCalculator: React.FC<Props> = ({
       cessRate: 0,
       cessAmount: 0,
       fixedCharges: 0,
+      scanningFee: scanningFeeNum,
+      advocateFee: advocateFeeNum,
       grandTotalCharges: grandTotal,
     };
   }, [
@@ -132,6 +136,8 @@ export const PlotCalculator: React.FC<Props> = ({
     state.registrationFeeRate,
     state.additionalCessPercent,
     state.fixedCharges,
+    state.scanningFee,
+    state.advocateFee,
     areaNumber,
     state.landAreaUnit,
     areaInRateUnit,
@@ -213,7 +219,7 @@ export const PlotCalculator: React.FC<Props> = ({
                   Select: sq.ft, sq.mt, Hectare, Acre, or Dismil
                 </span>
               </div>
-              <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
+              <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
                 <input
                   type="number"
                   min="0"
@@ -226,12 +232,12 @@ export const PlotCalculator: React.FC<Props> = ({
                       e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                     )
                   }
-                  className="flex-1 px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                  className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
                 <select
                   value={state.landAreaUnit}
                   onChange={(e) => updateField('landAreaUnit', e.target.value as AreaUnit)}
-                  className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium px-3 py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                  className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                 >
                   {AREA_UNITS_CONFIG.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -252,8 +258,8 @@ export const PlotCalculator: React.FC<Props> = ({
                   Sub-Registrar Jantri / Circle Rate
                 </span>
               </div>
-              <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2.5 text-sm font-semibold flex items-center">
+              <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                   Rs.
                 </div>
                 <input
@@ -268,16 +274,16 @@ export const PlotCalculator: React.FC<Props> = ({
                       e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                     )
                   }
-                  className="flex-1 px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                  className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
                 <select
                   value={state.guidelineRateUnit}
                   onChange={(e) => updateField('guidelineRateUnit', e.target.value as RateUnit)}
-                  className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium px-3 py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                  className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                 >
                   {RATE_UNITS_CONFIG.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.label}
+                      {r.perLabel}
                     </option>
                   ))}
                 </select>
@@ -356,8 +362,8 @@ export const PlotCalculator: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
                   Total Consideration Value (Rs.)
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -372,10 +378,10 @@ export const PlotCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   {considerationNumber > 0 && (
-                    <div className="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-500 border-l border-slate-200 dark:border-slate-700 flex items-center">
+                    <div className="bg-slate-100 dark:bg-slate-700/90 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700 flex items-center shrink-0">
                       {formatINRShort(considerationNumber)}
                     </div>
                   )}
@@ -391,8 +397,8 @@ export const PlotCalculator: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
                   Agreed Transaction Rate for Consideration
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -407,17 +413,17 @@ export const PlotCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.considerationRateUnit}
                     onChange={(e) =>
                       updateField('considerationRateUnit', e.target.value as 'sqft' | 'sqmt')
                     }
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium px-3 py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="sqft">Rs. per sq.ft</option>
-                    <option value="sqmt">Rs. per sq.mt</option>
+                    <option value="sqft">/ Sq.ft</option>
+                    <option value="sqmt">/ Sq.mt</option>
                   </select>
                 </div>
                 {typeof state.considerationRate === 'number' && state.considerationRate > 0 && (
@@ -514,8 +520,14 @@ export const PlotCalculator: React.FC<Props> = ({
         <div className="lg:col-span-5 space-y-4">
           <CalculationSummaryCard
             title="Open Plot"
+            tab="plot"
             result={result}
-            onOpenPrintModal={() => onOpenPrintModal(result, 'Open Plot')}
+            currentState={state}
+            scanningFee={state.scanningFee}
+            onChangeScanningFee={(val) => updateField('scanningFee', val)}
+            advocateFee={state.advocateFee}
+            onChangeAdvocateFee={(val) => updateField('advocateFee', val)}
+            onOpenPrintModal={(res, titleName, tabName, stateObj) => onOpenPrintModal(res, titleName, tabName, stateObj)}
           />
         </div>
       </div>

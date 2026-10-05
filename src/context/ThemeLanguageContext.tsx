@@ -132,7 +132,7 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     return 'hi';
   });
 
-  // Apply dark mode class to <html>
+  // Apply dark mode class to <html> and update mobile browser status bar theme-color
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -141,7 +141,30 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
       root.classList.remove('dark');
     }
     localStorage.setItem('app_theme', theme);
+
+    // Update <meta name="theme-color"> for Android status bar eye comfort
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute('content', theme === 'dark' ? '#0f172a' : '#4338ca');
   }, [theme]);
+
+  // Listen to OS theme changes if user hasn't explicitly set a preference
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const saved = localStorage.getItem('app_theme');
+      if (!saved) {
+        setThemeState(e.matches ? 'dark' : 'light');
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Save language
   useEffect(() => {

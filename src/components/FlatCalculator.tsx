@@ -4,20 +4,19 @@ import {
   formatINR,
   numberToIndianWords,
 } from '../utils/units';
-import { CalculationBase } from '../types/calculator';
+import { CalculationBase, ValuationResult, ActiveTab } from '../types/calculator';
+import { CalculationSummaryCard } from './CalculationSummaryCard';
 import {
   Building2,
   Calculator,
   RotateCcw,
   Sparkles,
-  Copy,
-  Check,
-  Receipt,
-  Info,
-  Layers,
   Percent,
   ChevronDown,
   AlertCircle,
+  Layers,
+  Info,
+  Receipt,
 } from 'lucide-react';
 
 export type FloorType = 'ground' | 'basement_first' | 'second_plus' | 'custom';
@@ -38,6 +37,8 @@ export interface FlatFormState {
   stampDutyRate: number | '';
   registrationFeeBase: CalculationBase;
   registrationFeeRate: number | '';
+  scanningFee?: number | '';
+  advocateFee?: number | '';
 }
 
 const BLANK_FLAT_STATE: FlatFormState = {
@@ -55,14 +56,31 @@ const BLANK_FLAT_STATE: FlatFormState = {
   stampDutyRate: '',
   registrationFeeBase: 'higher',
   registrationFeeRate: '',
+  scanningFee: '',
+  advocateFee: 10000,
 };
 
-export const FlatCalculator: React.FC = () => {
-  const [state, setState] = useState<FlatFormState>(BLANK_FLAT_STATE);
+interface Props {
+  state?: FlatFormState;
+  onChange?: (newState: FlatFormState) => void;
+  onOpenPrintModal?: (result: ValuationResult, title: string, tab?: ActiveTab, state?: any) => void;
+}
+
+export const FlatCalculator: React.FC<Props> = ({
+  state: externalState,
+  onChange: externalOnChange,
+  onOpenPrintModal,
+}) => {
+  const [internalState, setInternalState] = useState<FlatFormState>(BLANK_FLAT_STATE);
+  const state = externalState || internalState;
   const [copiedSummary, setCopiedSummary] = useState(false);
 
   const updateField = <K extends keyof FlatFormState>(key: K, value: FlatFormState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }));
+    if (externalOnChange) {
+      externalOnChange({ ...state, [key]: value });
+    } else {
+      setInternalState((prev) => ({ ...prev, [key]: value }));
+    }
   };
 
   // Determine floor discount percentage based on rules:
@@ -205,7 +223,7 @@ export const FlatCalculator: React.FC = () => {
   };
 
   const loadSample = () => {
-    setState({
+    const sampleState: FlatFormState = {
       floorType: 'basement_first', // प्रथम मंजिल (10% छूट)
       customDiscountPercent: '',
       discountApplyOn: 'construction_only',
@@ -220,12 +238,87 @@ export const FlatCalculator: React.FC = () => {
       stampDutyRate: 6,
       registrationFeeBase: 'higher',
       registrationFeeRate: 1,
-    });
+    };
+    if (externalOnChange) {
+      externalOnChange(sampleState);
+    } else {
+      setInternalState(sampleState);
+    }
   };
 
   const resetAll = () => {
-    setState(BLANK_FLAT_STATE);
+    if (externalOnChange) {
+      externalOnChange(BLANK_FLAT_STATE);
+    } else {
+      setInternalState(BLANK_FLAT_STATE);
+    }
   };
+
+  const valuationResult: ValuationResult = useMemo(() => {
+    const scanningFeeNum = typeof state.scanningFee === 'number' ? state.scanningFee : 0;
+    const advocateFeeNum = typeof state.advocateFee === 'number' ? state.advocateFee : (state.advocateFee === '' ? 0 : 10000);
+    const grandTotal = totalPayable + scanningFeeNum + advocateFeeNum;
+
+    return {
+      landAreaOriginal: 0,
+      landAreaUnit: 'sqft',
+      landAreaInRateUnit: 0,
+      landGuidelineRate: typeof state.guidelineRate === 'number' ? state.guidelineRate : 0,
+      landRateUnit: state.guidelineRateUnit,
+      landGovtValueRaw: guidelineComponentValue,
+      landDiscountAmount: 0,
+      landGovtValueNet: guidelineComponentValue,
+      hasConstruction: true,
+      constructionAreaOriginal: rawBuiltUpArea,
+      constructionAreaUnit: state.builtUpAreaUnit,
+      constructionGuidelineRate: typeof state.constructionRate === 'number' ? state.constructionRate : 0,
+      constructionRateUnit: state.constructionRateUnit,
+      constructionGovtValueRaw: constructionComponentValue,
+      constructionConcessionAmount: 0,
+      constructionGovtValueNet: constructionComponentValue,
+      extrasGovtValue: 0,
+      totalGovtValue: totalMarketGovtValue,
+      considerationValue: considerationNumber,
+      stampDutyBaseType: state.stampDutyBase,
+      stampDutyApplicableBase,
+      stampDutyBaseFormula: state.stampDutyBase === 'higher' ? 'Higher of Both' : state.stampDutyBase === 'govt' ? 'Govt Value' : 'Consideration',
+      registrationFeeBaseType: state.registrationFeeBase,
+      registrationFeeApplicableBase,
+      registrationFeeBaseFormula: state.registrationFeeBase === 'higher' ? 'Higher of Both' : state.registrationFeeBase === 'govt' ? 'Govt Value' : 'Consideration',
+      stampDutyRate: typeof state.stampDutyRate === 'number' ? state.stampDutyRate : 0,
+      stampDutyAmount,
+      registrationFeeRate: typeof state.registrationFeeRate === 'number' ? state.registrationFeeRate : 0,
+      registrationFeeAmount,
+      cessRate: 0,
+      cessAmount: 0,
+      fixedCharges: 0,
+      scanningFee: scanningFeeNum,
+      advocateFee: advocateFeeNum,
+      grandTotalCharges: grandTotal,
+    };
+  }, [
+    state.guidelineRate,
+    state.guidelineRateUnit,
+    guidelineComponentValue,
+    rawBuiltUpArea,
+    state.builtUpAreaUnit,
+    state.constructionRate,
+    state.constructionRateUnit,
+    constructionComponentValue,
+    totalMarketGovtValue,
+    considerationNumber,
+    state.stampDutyBase,
+    stampDutyApplicableBase,
+    state.registrationFeeBase,
+    registrationFeeApplicableBase,
+    state.stampDutyRate,
+    stampDutyAmount,
+    state.registrationFeeRate,
+    registrationFeeAmount,
+    totalPayable,
+    state.scanningFee,
+    state.advocateFee,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -386,8 +479,8 @@ export const FlatCalculator: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -402,23 +495,23 @@ export const FlatCalculator: React.FC = () => {
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.guidelineRateUnit}
                     onChange={(e) => updateField('guidelineRateUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-2.5 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer font-semibold"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="sqft">/ Sqft</option>
-                    <option value="sqmt">/ Sqmt</option>
+                    <option value="sqft">/ Sq.ft</option>
+                    <option value="sqmt">/ Sq.mt</option>
                   </select>
                 </div>
                 {typeof state.guidelineRate === 'number' && state.guidelineRate > 0 && (
                   <div className="text-[11px] text-indigo-700 dark:text-indigo-400 font-medium italic mt-1 px-1">
-                    In words / शब्दों में: {numberToIndianWords(state.guidelineRate)} / {state.guidelineRateUnit}
+                    In words / शब्दों में: {numberToIndianWords(state.guidelineRate)} / {state.guidelineRateUnit === 'sqft' ? 'Sq.ft' : 'Sq.mt'}
                     {isGuidelineDiscounted && discountPercent > 0 && (
                       <span className="text-slate-500 not-italic block font-normal text-[10px] mt-0.5">
-                        छूट उपरांत प्रभावी दर: {formatINR(effectiveGuidelineRate)}/{state.guidelineRateUnit}
+                        छूट उपरांत प्रभावी दर: {formatINR(effectiveGuidelineRate)}/{state.guidelineRateUnit === 'sqft' ? 'Sq.ft' : 'Sq.mt'}
                       </span>
                     )}
                   </div>
@@ -437,8 +530,8 @@ export const FlatCalculator: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -453,23 +546,23 @@ export const FlatCalculator: React.FC = () => {
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.constructionRateUnit}
                     onChange={(e) => updateField('constructionRateUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-2.5 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer font-semibold"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="sqft">/ Sqft</option>
-                    <option value="sqmt">/ Sqmt</option>
+                    <option value="sqft">/ Sq.ft</option>
+                    <option value="sqmt">/ Sq.mt</option>
                   </select>
                 </div>
                 {typeof state.constructionRate === 'number' && state.constructionRate > 0 && (
                   <div className="text-[11px] text-indigo-700 dark:text-indigo-400 font-medium italic mt-1 px-1">
-                    In words / शब्दों में: {numberToIndianWords(state.constructionRate)} / {state.constructionRateUnit}
+                    In words / शब्दों में: {numberToIndianWords(state.constructionRate)} / {state.constructionRateUnit === 'sqft' ? 'Sq.ft' : 'Sq.mt'}
                     {isConstructionDiscounted && discountPercent > 0 && (
                       <span className="text-slate-500 not-italic block font-normal text-[10px] mt-0.5">
-                        छूट उपरांत प्रभावी दर: {formatINR(effectiveConstructionRate)}/{state.constructionRateUnit}
+                        छूट उपरांत प्रभावी दर: {formatINR(effectiveConstructionRate)}/{state.constructionRateUnit === 'sqft' ? 'Sq.ft' : 'Sq.mt'}
                       </span>
                     )}
                   </div>
@@ -481,7 +574,7 @@ export const FlatCalculator: React.FC = () => {
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   बिल्टअप एरिया (Built-up Area)
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
                   <input
                     type="number"
                     min="0"
@@ -494,15 +587,15 @@ export const FlatCalculator: React.FC = () => {
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   <select
                     value={state.builtUpAreaUnit}
                     onChange={(e) => updateField('builtUpAreaUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer font-semibold"
+                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
                   >
-                    <option value="sqft">वर्गफीट (Sqft)</option>
-                    <option value="sqmt">वर्गमीटर (Sqmt)</option>
+                    <option value="sqft">Sq.ft</option>
+                    <option value="sqmt">Sq.mt</option>
                   </select>
                 </div>
                 {typeof state.builtUpArea === 'number' && state.builtUpArea > 0 && (
@@ -545,8 +638,8 @@ export const FlatCalculator: React.FC = () => {
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   Consideration Value / विक्रय मूल्य (in Rupees)
                 </label>
-                <div className="flex rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500">
-                  <div className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-2 text-sm font-semibold flex items-center">
+                <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -561,7 +654,7 @@ export const FlatCalculator: React.FC = () => {
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-semibold"
+                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 {typeof state.considerationValue === 'number' && state.considerationValue > 0 && (
@@ -721,172 +814,56 @@ export const FlatCalculator: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Output Dues & Summary */}
+        {/* Right Column: Unified Output Dues & Summary */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Top Banner Card: Total Payable */}
-          <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-base text-white">कुल देय शुल्क (Total Dues)</h3>
-              </div>
-
-              {hasEnteredData && (
-                <button
-                  type="button"
-                  onClick={handleCopySummary}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                >
-                  {copiedSummary ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Summary</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-800">
-              <span className="text-xs text-indigo-300 font-semibold uppercase tracking-wider block">
-                Total Amount to Pay (मुद्रांक + पंजीयन)
-              </span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                {formatINR(totalPayable)}
-              </div>
-              <div className="text-xs text-indigo-200/90 italic mt-1">
-                {totalPayable > 0
-                  ? numberToIndianWords(totalPayable)
-                  : 'दरें एवं बिल्टअप एरिया दर्ज करने पर गणना प्रदर्शित होगी'}
-              </div>
-            </div>
-
-            {/* Sub-breakdown: Stamp Duty & Registration Fee */}
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/80">
-              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-semibold">
-                    मुद्रांक शुल्क
-                  </span>
-                  {typeof state.stampDutyRate === 'number' && state.stampDutyRate > 0 && (
-                    <span className="text-[11px] text-indigo-400 font-bold">
-                      @{state.stampDutyRate}%
-                    </span>
-                  )}
-                </div>
-                <span className="text-lg font-bold text-white block mt-1">
-                  {formatINR(stampDutyAmount)}
-                </span>
-                {stampDutyAmount > 0 && (
-                  <span className="text-[10px] text-slate-400 italic block mt-0.5">
-                    {numberToIndianWords(stampDutyAmount)}
-                  </span>
-                )}
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Base: {formatINR(stampDutyApplicableBase)}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-semibold">
-                    पंजीयन शुल्क
-                  </span>
-                  {typeof state.registrationFeeRate === 'number' && state.registrationFeeRate > 0 && (
-                    <span className="text-[11px] text-indigo-400 font-bold">
-                      @{state.registrationFeeRate}%
-                    </span>
-                  )}
-                </div>
-                <span className="text-lg font-bold text-white block mt-1">
-                  {formatINR(registrationFeeAmount)}
-                </span>
-                {registrationFeeAmount > 0 && (
-                  <span className="text-[10px] text-slate-400 italic block mt-0.5">
-                    {numberToIndianWords(registrationFeeAmount)}
-                  </span>
-                )}
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Base: {formatINR(registrationFeeApplicableBase)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Detailed Valuation Overview Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3 text-xs">
-            <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">
-              <Calculator className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>प्रकोष्ठ (Flat) मूल्यांकन सारांश</span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>तल स्थिति एवं छूट:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {state.floorType === 'ground' && 'भूतल (0% छूट)'}
-                {state.floorType === 'basement_first' && 'तलघर / प्रथम मंजिल (10% छूट)'}
-                {state.floorType === 'second_plus' && 'द्वितीय व अन्य मंजिल (20% छूट)'}
-                {state.floorType === 'custom' && `कस्टम (${discountPercent}% छूट)`}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>बिल्टअप एरिया:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {rawBuiltUpArea > 0 ? `${rawBuiltUpArea} ${state.builtUpAreaUnit}` : '—'}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>गाइडलाइन दर भाग मूल्य:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {formatINR(guidelineComponentValue)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>उपबंध निर्माण दर भाग मूल्य:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {formatINR(constructionComponentValue)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
-              <span>कुल शासकीय गाइडलाइन मूल्य:</span>
-              <span className="font-extrabold text-indigo-600 dark:text-indigo-400">
-                {formatINR(totalMarketGovtValue)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
-              <span>विक्रय मूल्य (Consideration Value):</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {formatINR(considerationNumber)}
-              </span>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-              <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                <span>मुद्रांक शुल्क आधार:</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {state.stampDutyBase === 'higher' ? 'Higher of Both' : state.stampDutyBase === 'govt' ? 'Govt Value' : 'Consideration'}{' '}
-                  ({formatINR(stampDutyApplicableBase)})
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                <span>पंजीयन शुल्क आधार:</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {state.registrationFeeBase === 'higher' ? 'Higher of Both' : state.registrationFeeBase === 'govt' ? 'Govt Value' : 'Consideration'}{' '}
-                  ({formatINR(registrationFeeApplicableBase)})
-                </span>
-              </div>
-            </div>
-          </div>
+          <CalculationSummaryCard
+            title="Flat / Apartment (प्रकोष्ठ)"
+            tab="flat"
+            result={valuationResult}
+            currentState={state}
+            onOpenPrintModal={(res, titleName, tabName, stateObj) => onOpenPrintModal?.(res, titleName, tabName, stateObj)}
+            scanningFee={state.scanningFee}
+            onChangeScanningFee={(val) => updateField('scanningFee', val)}
+            advocateFee={state.advocateFee}
+            onChangeAdvocateFee={(val) => updateField('advocateFee', val)}
+            overviewTitle="प्रकोष्ठ मूल्यांकन घटक विवरण (Valuation Overview)"
+            overviewItems={[
+              {
+                label: 'तल स्थिति एवं छूट:',
+                value:
+                  state.floorType === 'ground'
+                    ? 'भूतल (0% छूट)'
+                    : state.floorType === 'basement_first'
+                    ? 'तलघर / प्रथम मंजिल (10% छूट)'
+                    : state.floorType === 'second_plus'
+                    ? 'द्वितीय व अन्य मंजिल (20% छूट)'
+                    : `कस्टम (${discountPercent}% छूट)`,
+              },
+              {
+                label: 'बिल्टअप एरिया:',
+                value: rawBuiltUpArea > 0 ? `${rawBuiltUpArea} ${state.builtUpAreaUnit}` : '—',
+              },
+              {
+                label: 'गाइडलाइन दर भाग मूल्य:',
+                value: formatINR(guidelineComponentValue),
+              },
+              {
+                label: 'उपबंध निर्माण दर भाग मूल्य:',
+                value: formatINR(constructionComponentValue),
+              },
+              {
+                label: 'कुल शासकीय गाइडलाइन मूल्य:',
+                value: formatINR(totalMarketGovtValue),
+                isBold: true,
+                isHighlight: true,
+              },
+              {
+                label: 'विक्रय मूल्य (Consideration Value):',
+                value: formatINR(considerationNumber),
+                isBold: true,
+              },
+            ]}
+          />
         </div>
       </div>
     </div>

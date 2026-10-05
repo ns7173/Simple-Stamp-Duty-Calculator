@@ -1,1 +1,68 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    min-width: 320px;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Prevent auto-zoom on mobile Android/iOS inputs when focused */
+  @media (max-width: 640px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Eye-friendly subtle scrollbar for mobile touch and desktop trackpads */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.6);
+  }
+}
+
+/* Custom utility for perfectly uniform unit selector inputs across all screen sizes */
+.unit-input-group {
+  display: flex;
+  align-items: stretch;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.15s ease-in-out;
+}
+
+.unit-select-btn {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1em 1em;
+  padding-right: 1.75rem;
+}
