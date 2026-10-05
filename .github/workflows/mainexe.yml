@@ -19,9 +19,6 @@ jobs:
       - name: Install project dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Install Electron and builder
-        run: npm install --legacy-peer-deps electron electron-builder
-
       - name: Build web application
         run: npm run build
 
@@ -31,7 +28,8 @@ jobs:
           $electronMain = @'
           const { app, BrowserWindow } = require('electron');
           const path = require('path');
-          const isDev = require('electron-is-dev');
+
+          const isDev = !app.isPackaged;
 
           let mainWindow;
 
@@ -46,7 +44,7 @@ jobs:
 
             const startUrl = isDev
               ? 'http://localhost:3000'
-              : `file://${path.join(__dirname, '../build/index.html')}`;
+              : `file://${path.join(__dirname, '../dist/index.html')}`;
 
             mainWindow.loadURL(startUrl);
 
@@ -82,6 +80,8 @@ jobs:
         run: |
           $packageJson = Get-Content 'package.json' -Raw | ConvertFrom-Json
 
+          $packageJson | Add-Member -NotePropertyName 'description' -NotePropertyValue 'Simple Stamp Duty Calculator' -Force
+          $packageJson | Add-Member -NotePropertyName 'author' -NotePropertyValue 'Your Name' -Force
           $packageJson | Add-Member -NotePropertyName 'homepage' -NotePropertyValue './' -Force
           $packageJson | Add-Member -NotePropertyName 'main' -NotePropertyValue 'public/electron.js' -Force
 
@@ -89,18 +89,3 @@ jobs:
 
       - name: Build EXE with electron-builder
         run: npx electron-builder --win --publish never
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows EXE
-        uses: actions/upload-artifact@v4
-        with:
-          name: CG-Stamp-Registration-Calculator-EXE
-          path: dist/*.exe
-          if-no-files-found: ignore
-
-      - name: Upload all build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows-Build-Artifacts
-          path: dist/
