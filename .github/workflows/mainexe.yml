@@ -26,8 +26,9 @@ jobs:
         run: npm run build
 
       - name: Create Electron main process
+        shell: pwsh
         run: |
-          $electronMain = @"
+          $electronMain = @'
           const { app, BrowserWindow } = require('electron');
           const path = require('path');
           const isDev = require('electron-is-dev');
@@ -45,7 +46,7 @@ jobs:
 
             const startUrl = isDev
               ? 'http://localhost:3000'
-              : `file://$${path.join(__dirname, '../build/index.html')}`;
+              : `file://${path.join(__dirname, '../build/index.html')}`;
 
             mainWindow.loadURL(startUrl);
 
@@ -71,23 +72,23 @@ jobs:
               createWindow();
             }
           });
-          "@
+          '@
 
-          New-Item -ItemType File -Path ".\public\electron.js" -Value $electronMain -Force
+          New-Item -ItemType Directory -Path ".\public" -Force | Out-Null
+          Set-Content -Path ".\public\electron.js" -Value $electronMain -Encoding UTF8
 
       - name: Update package.json with Electron config
+        shell: pwsh
         run: |
           $packageJson = Get-Content 'package.json' -Raw | ConvertFrom-Json
-          
-          $packageJson.homepage = './'
-          $packageJson.main = 'public/electron.js'
-          $packageJson.homepage = './'
-          
-          $packageJson | ConvertTo-Json -Depth 10 | Set-Content 'package.json'
+
+          $packageJson | Add-Member -NotePropertyName 'homepage' -NotePropertyValue './' -Force
+          $packageJson | Add-Member -NotePropertyName 'main' -NotePropertyValue 'public/electron.js' -Force
+
+          $packageJson | ConvertTo-Json -Depth 10 | Set-Content 'package.json' -Encoding UTF8
 
       - name: Build EXE with electron-builder
-        run: |
-          npx electron-builder --win --publish never
+        run: npx electron-builder --win --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
