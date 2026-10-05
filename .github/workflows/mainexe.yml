@@ -41,80 +41,113 @@ jobs:
       - name: Build Web Application
         run: npm run build
 
-      - name: Setup Electron and Package Configuration
+      - name: Install Electron and Electron Builder
+        run: npm install --legacy-peer-deps -D electron electron-builder
+
+      - name: Create Electron Main File
         shell: pwsh
         run: |
-          npm install --legacy-peer-deps -D electron electron-builder
-
           if (!(Test-Path electron.js)) {
             @'
-          const { app, BrowserWindow } = require('electron');
-          const path = require('path');
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
 
-          function createWindow() {
-            const win = new BrowserWindow({
-              width: 1280,
-              height: 850,
-              minWidth: 800,
-              minHeight: 600,
-              title: 'Stamp Duty and Registration Fees Calculator',
-              autoHideMenuBar: true,
-              webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-              },
-            });
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 850,
+    minWidth: 800,
+    minHeight: 600,
+    title: 'Stamp Duty and Registration Fees Calculator',
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    },
+  });
 
-            win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+  win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+}
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+'@ | Out-File -FilePath electron.js -Encoding utf8
           }
 
-          app.whenReady().then(createWindow);
+      - name: Update Package.json for Electron Builder
+        run: node scripts/update-package-json.js
+        continue-on-error: true
 
-          app.on('window-all-closed', () => {
-            if (process.platform !== 'darwin') app.quit();
-          });
-          '@ | Out-File -FilePath electron.js -Encoding utf8
-          }
-
-          node -e @"
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.main = 'electron.js';
-          pkg.author = pkg.author || 'Stamp Duty Calculator';
-          pkg.description = pkg.description || 'Property Valuation & Stamp Duty Calculator';
-          pkg.build = {
-            appId: 'com.stampduty.calculator',
-            productName: 'Stamp Duty Calculator',
-            directories: {
-              output: 'release'
-            },
-            win: {
-              target: ['nsis', 'portable']
-            },
-            nsis: {
-              oneClick: false,
-              allowToChangeInstallationDirectory: true,
-              createDesktopShortcut: true,
-              createStartMenuShortcut: true
-            },
-            files: [
+      - name: Configure Package.json Manually
+        shell: pwsh
+        run: |
+          $packagePath = 'package.json'
+          $pkg = Get-Content $packagePath | ConvertFrom-Json
+          
+          $pkg.main = 'electron.js'
+          $pkg.author = 'Stamp Duty Calculator'
+          $pkg.description = 'Property Valuation & Stamp Duty Calculator'
+          $pkg.build = @{
+            appId = 'com.stampduty.calculator'
+            productName = 'Stamp Duty Calculator'
+            directories = @{
+              output = 'release'
+            }
+            win = @{
+              target = @('nsis', 'portable')
+              certificateFile = $null
+              certificatePassword = $null
+              signingHashAlgorithms = @('sha256')
+              sign = $null
+            }
+            nsis = @{
+              oneClick = $false
+              allowToChangeInstallationDirectory = $true
+              createDesktopShortcut = $true
+              createStartMenuShortcut = $true
+              installerIcon = $null
+              uninstallerIcon = $null
+              installerHeaderIcon = $null
+            }
+            files = @(
               'dist/**/*',
               'electron.js'
-            ]
-          };
-          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "@
+            )
+          }
+          
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content $packagePath
+          Write-Host "Package.json configured successfully"
 
       - name: Build Windows EXE
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: "true"
+        run: |
+          npx electron-builder --win --x64 --publish never
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Build failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+      - name: List Build Output
+        shell: pwsh
+        run: |
+          Write-Host "Checking release directory..."
+          if (Test-Path release) {
+            Get-ChildItem -Path release -Recurse | Format-Table -Property FullName
+          } else {
+            Write-Host "Release directory not found!"
+          }
 
       - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: stamp-duty-calculator-windows-exe
           path: release/*.exe
-          if-no-files-found: error
           retention-days: 30
