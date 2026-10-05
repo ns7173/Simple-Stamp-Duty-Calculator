@@ -1,5 +1,7 @@
 {
   "name": "react-example",
+  "description": "A simple stamp duty calculator application",
+  "author": "Your Name",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -32,6 +34,8 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite-plugin-pwa": "^2.0.0",
+    "electron": "^VERSION",
+    "electron-builder": "^VERSION"
   }
 }
