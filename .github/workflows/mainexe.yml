@@ -11,6 +11,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-windows:
     name: Build Windows Desktop EXE
@@ -24,8 +27,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install Project Dependencies
+        shell: pwsh
         run: |
           if (Test-Path package-lock.json) {
             npm ci --legacy-peer-deps
@@ -37,6 +42,7 @@ jobs:
         run: npm run build
 
       - name: Setup Electron and Package Configuration
+        shell: pwsh
         run: |
           npm install --legacy-peer-deps -D electron electron-builder
 
@@ -99,9 +105,12 @@ jobs:
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "@
 
-        - name: Build Windows EXE
+      - name: Build Windows EXE
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --x64
-       
+
       - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
         with:
