@@ -99,9 +99,10 @@ jobs:
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "@
 
-      - name: Build Windows EXE
+        - name: Build Windows EXE
         run: npx electron-builder --win --x64
-
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
         with:
