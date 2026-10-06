@@ -91,8 +91,9 @@ function createWindow() {
     console.log('Loading built app from:', buildIndexPath);
     mainWindow.loadFile(buildIndexPath);
     
-    // Open dev tools to see any console errors
-    mainWindow.webContents.openDevTools();
+    // Dev tools disabled for production builds
+    // Uncomment the line below if you need to debug:
+    // mainWindow.webContents.openDevTools();
   } else {
     console.log('Build not found, attempting to load dev server at:', DEV_SERVER_URL);
     mainWindow
