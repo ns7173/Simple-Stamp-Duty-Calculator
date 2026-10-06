@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ValuationResult, ActiveTab } from '../types/calculator';
-import { formatINR, numberToIndianWords } from '../utils/units';
 import {
   X,
   Printer,
@@ -13,6 +12,10 @@ import {
   Copy,
 } from 'lucide-react';
 import { saveCalculationToStorage } from '../utils/savedCalculations';
+import { PlotPrintSheet, getPlotSummaryText } from '../tabs/plot';
+import { BuildingPrintSheet, getBuildingSummaryText } from '../tabs/building';
+import { FlatPrintSheet, getFlatSummaryText } from '../tabs/flat';
+import { LeasePrintSheet, getLeaseSummaryText } from '../tabs/lease';
 
 interface Props {
   isOpen: boolean;
@@ -53,20 +56,17 @@ export const PrintChallanModal: React.FC<Props> = ({
   });
 
   const getSummaryText = () => {
-    const scanningLine = result.scanningFee && result.scanningFee > 0 ? `3. *Scanning Fee (स्कैनिंग शुल्क):* लगभग / Approx ${formatINR(result.scanningFee)}\n` : '';
-    const advocateLine = result.advocateFee && result.advocateFee > 0 ? `4. *Advocate Fees (अधिवक्ता शुल्क):* ${formatINR(result.advocateFee)}\n` : '';
-    return `📄 *Stamp Duty & Registration Fee Estimate*
-*Category:* ${tabTitle}
-*Date:* ${currentDate}
-
-*Total Govt Guideline Value:* ${formatINR(result.totalGovtValue)}
-*Sale Consideration Value:* ${formatINR(result.considerationValue)}
-──────────────────────
-1. *Stamp Duty (${result.stampDutyRate}%):* ${formatINR(result.stampDutyAmount)}
-2. *Registration Fee (${result.registrationFeeRate}%):* ${formatINR(result.registrationFeeAmount)}
-${scanningLine}${advocateLine}──────────────────────
-*TOTAL ESTIMATED PAYABLE:* ${formatINR(result.grandTotalCharges)}
-*In Words:* ${numberToIndianWords(result.grandTotalCharges)}`;
+    switch (tab) {
+      case 'lease':
+        return getLeaseSummaryText(result, currentState);
+      case 'building':
+        return getBuildingSummaryText(result, tabTitle, currentDate);
+      case 'flat':
+        return getFlatSummaryText(result, tabTitle, currentDate);
+      case 'plot':
+      default:
+        return getPlotSummaryText(result, tabTitle, currentDate);
+    }
   };
 
   // Option 1: Native Print Page
@@ -322,168 +322,34 @@ ${scanningLine}${advocateLine}────────────────�
 
         {/* Printable Formal Sheet Content */}
         <div className="p-6 sm:p-8 space-y-6 text-slate-900" id="printable-challan">
-          {/* Header */}
-          <div className="text-center border-b-2 border-slate-800 pb-5">
-            <h1 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight text-slate-950">
-              Stamp Duty & Registration Fee Estimate Statement
-            </h1>
-            <p className="text-xs text-slate-600 mt-1">
-              Prepared for {tabTitle} Valuation Assessment • Date: {currentDate}
-            </p>
-          </div>
-
-          {/* Property Valuation Details */}
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-200 pb-1">
-              1. Property Valuation Assessment
-            </h2>
-            <div className="overflow-x-auto -mx-1 sm:mx-0">
-              <table className="w-full text-xs text-left border border-slate-200 min-w-[280px]">
-                <tbody>
-                <tr className="border-b border-slate-200">
-                  <td className="p-2.5 font-medium bg-slate-50 w-1/2">
-                    Property Category:
-                  </td>
-                  <td className="p-2.5 font-bold text-slate-900">{tabTitle}</td>
-                </tr>
-                {result.landAreaOriginal > 0 && (
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2.5 font-medium bg-slate-50">
-                      Land Area & Guideline Rate:
-                    </td>
-                    <td className="p-2.5">
-                      {result.landAreaOriginal} {result.landAreaUnit} (= {Number(result.landAreaInRateUnit.toFixed(4))} {result.landRateUnit}) @ {formatINR(result.landGuidelineRate)}/{result.landRateUnit}
-                    </td>
-                  </tr>
-                )}
-                {result.landGovtValueNet > 0 && (
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2.5 font-medium bg-slate-50">
-                      Land Government Value:
-                    </td>
-                    <td className="p-2.5 font-mono font-bold">
-                      {formatINR(result.landGovtValueNet)}
-                      {result.landDiscountAmount > 0 && (
-                        <span className="text-emerald-700 ml-2 font-normal text-[11px]">
-                          (Discount Applied: -{formatINR(result.landDiscountAmount)})
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                )}
-                {result.hasConstruction && (
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2.5 font-medium bg-slate-50">
-                      Constructed Area & Guideline Rate:
-                    </td>
-                    <td className="p-2.5">
-                      {result.constructionAreaOriginal} {result.constructionAreaUnit} @ {formatINR(result.constructionGuidelineRate)}/{result.constructionRateUnit}
-                    </td>
-                  </tr>
-                )}
-                {result.hasConstruction && (
-                  <tr className="border-b border-slate-200">
-                    <td className="p-2.5 font-medium bg-slate-50">
-                      Construction Government Value:
-                    </td>
-                    <td className="p-2.5 font-mono font-bold">
-                      {formatINR(result.constructionGovtValueNet)}
-                      {result.constructionConcessionAmount > 0 && (
-                        <span className="text-emerald-700 ml-2 font-normal text-[11px]">
-                          (Concession Applied: -{formatINR(result.constructionConcessionAmount)})
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                )}
-                <tr className="border-b border-slate-200 bg-slate-100/60 font-semibold">
-                  <td className="p-2.5">Total Government Guideline Value:</td>
-                  <td className="p-2.5 font-mono font-bold text-indigo-950">
-                    {formatINR(result.totalGovtValue)}
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="p-2.5 font-medium bg-slate-50">
-                    Sale Deed Consideration Value:
-                  </td>
-                  <td className="p-2.5 font-mono font-bold">
-                    {formatINR(result.considerationValue)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            </div>
-          </div>
-
-          {/* Duty & Fees Schedule */}
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 border-b border-slate-200 pb-1">
-              2. Payable Government Dues & Stamp Schedule
-            </h2>
-            <div className="overflow-x-auto -mx-1 sm:mx-0">
-              <table className="w-full text-xs text-left border border-slate-200 min-w-[280px]">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
-                    <th className="p-2.5">Head of Account / Fee</th>
-                    <th className="p-2.5">Rate (%)</th>
-                    <th className="p-2.5 text-right">Amount (Rs.)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  <tr>
-                    <td className="p-2.5 font-bold">1. Stamp Duty</td>
-                    <td className="p-2.5 font-mono">{result.stampDutyRate}%</td>
-                    <td className="p-2.5 text-right font-mono font-bold">
-                      {formatINR(result.stampDutyAmount)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="p-2.5 font-bold">2. Registration Fees</td>
-                    <td className="p-2.5 font-mono">{result.registrationFeeRate}%</td>
-                    <td className="p-2.5 text-right font-mono font-bold">
-                      {formatINR(result.registrationFeeAmount)}
-                    </td>
-                  </tr>
-                  {result.scanningFee !== undefined && result.scanningFee > 0 && (
-                    <tr>
-                      <td className="p-2.5 font-bold">
-                        3. Scanning Charges (स्कैनिंग शुल्क): लगभग / Approx Rs.
-                      </td>
-                      <td className="p-2.5 font-mono text-slate-500">लगभग / Approx</td>
-                      <td className="p-2.5 text-right font-mono font-bold">
-                        लगभग {formatINR(result.scanningFee)}
-                      </td>
-                    </tr>
-                  )}
-                  {result.advocateFee !== undefined && result.advocateFee > 0 && (
-                    <tr>
-                      <td className="p-2.5 font-bold">4. Advocate / Documentation Fees (अधिवक्ता शुल्क)</td>
-                      <td className="p-2.5 font-mono text-slate-500"></td>
-                      <td className="p-2.5 text-right font-mono font-bold">
-                        {formatINR(result.advocateFee)}
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="bg-slate-900 text-white font-bold text-sm">
-                    <td className="p-3" colSpan={2}>
-                      TOTAL ESTIMATED PAYABLE (STAMP + REGISTRATION + CHARGES)
-                    </td>
-                    <td className="p-3 text-right font-mono font-extrabold text-base">
-                      {formatINR(result.grandTotalCharges)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Amount in words */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-            <span className="font-bold text-slate-700">Amount in Words / शब्दों में राशि: </span>
-            <span className="font-semibold italic text-slate-900">
-              {numberToIndianWords(result.grandTotalCharges)}
-            </span>
-          </div>
+          {tab === 'lease' && (
+            <LeasePrintSheet
+              result={result}
+              currentState={currentState}
+              currentDate={currentDate}
+            />
+          )}
+          {tab === 'building' && (
+            <BuildingPrintSheet
+              result={result}
+              tabTitle={tabTitle}
+              currentDate={currentDate}
+            />
+          )}
+          {tab === 'flat' && (
+            <FlatPrintSheet
+              result={result}
+              tabTitle={tabTitle}
+              currentDate={currentDate}
+            />
+          )}
+          {tab === 'plot' && (
+            <PlotPrintSheet
+              result={result}
+              tabTitle={tabTitle}
+              currentDate={currentDate}
+            />
+          )}
         </div>
       </div>
     </div>

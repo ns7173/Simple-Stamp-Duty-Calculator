@@ -4,22 +4,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  PlotState,
-  BuildingState,
-  ValuationResult,
-} from './types/calculator';
+import { ValuationResult } from './types/calculator';
 import { Header } from './components/Header';
 import { TabsNav, ActiveTab } from './components/TabsNav';
-import { PlotCalculator } from './components/PlotCalculator';
-import { BuildingCalculator } from './components/BuildingCalculator';
-import { FlatCalculator } from './components/FlatCalculator';
-import { LeaseCalculator } from './components/LeaseCalculator';
+import { PlotCalculator, initialPlotState, PlotState } from './tabs/plot';
+import { BuildingCalculator, initialBuildingState, BuildingState } from './tabs/building';
+import { FlatCalculator } from './tabs/flat';
+import { LeaseCalculator } from './tabs/lease';
 import { UnitConverterModal } from './components/UnitConverterModal';
 import { PrintChallanModal } from './components/PrintChallanModal';
 import { OfflineBackupModal } from './components/OfflineBackupModal';
 import { PermissionsModal } from './components/PermissionsModal';
-import { ExportPackagingModal } from './components/ExportPackagingModal';
 import { SavedCalculationsModal } from './components/SavedCalculationsModal';
 import { ThemeLanguageProvider, useThemeLanguage } from './context/ThemeLanguageContext';
 import { PlatformProvider, usePlatform } from './context/PlatformContext';
@@ -29,52 +24,6 @@ import {
   loadWorkingSession,
 } from './utils/offlineBackup';
 import { getSavedCalculations } from './utils/savedCalculations';
-
-const initialPlotState: PlotState = {
-  landArea: '',
-  landAreaUnit: 'sqft',
-  guidelineRate: '',
-  guidelineRateUnit: 'sqmt',
-  considerationValue: '',
-  considerationMode: 'direct',
-  considerationRate: '',
-  considerationRateUnit: 'sqft',
-  stampDutyBase: 'higher',
-  stampDutyRate: '',
-  registrationFeeBase: 'higher',
-  registrationFeeRate: '',
-  additionalCessPercent: 0,
-  fixedCharges: 0,
-  scanningFee: '',
-  advocateFee: 10000,
-};
-
-const initialBuildingState: BuildingState = {
-  buildingType: 'residential',
-  landArea: '',
-  landAreaUnit: 'sqft',
-  landGuidelineRate: '',
-  landGuidelineRateUnit: 'sqmt',
-  constructionMode: 'complete',
-  completeConstructedArea: '',
-  completeConstructionUnit: 'sqft',
-  floors: [
-    { id: '1', name: 'Ground Floor', area: '', rate: '' },
-  ],
-  floorAreaUnit: 'sqft',
-  defaultConstructionRate: '',
-  defaultConstructionRateUnit: 'sqft',
-  considerationValue: '',
-  considerationMode: 'direct',
-  stampDutyBase: 'higher',
-  stampDutyRate: '',
-  registrationFeeBase: 'higher',
-  registrationFeeRate: '',
-  additionalCessPercent: 0,
-  fixedCharges: 0,
-  scanningFee: '',
-  advocateFee: 10000,
-};
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('plot');
@@ -89,7 +38,6 @@ function MainApp() {
   const [isUnitConverterOpen, setIsUnitConverterOpen] = useState(false);
   const [isOfflineBackupOpen, setIsOfflineBackupOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
-  const [isPackagingOpen, setIsPackagingOpen] = useState(false);
   const [isSavedCalculationsOpen, setIsSavedCalculationsOpen] = useState(false);
   const [savedCalculationsCount, setSavedCalculationsCount] = useState(0);
 
@@ -192,12 +140,11 @@ function MainApp() {
           : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100'
       }`}
     >
-      {/* Top Header with Offline Backup, Permissions, Packaging & Quick Tools */}
+      {/* Top Header with Offline Backup, Permissions & Quick Tools */}
       <Header
         onOpenUnitConverter={() => setIsUnitConverterOpen(true)}
         onOpenOfflineBackup={() => setIsOfflineBackupOpen(true)}
         onOpenPermissions={() => setIsPermissionsOpen(true)}
-        onOpenPackaging={() => setIsPackagingOpen(true)}
         onOpenSavedCalculations={() => setIsSavedCalculationsOpen(true)}
         savedCalculationsCount={savedCalculationsCount}
       />
@@ -237,21 +184,6 @@ function MainApp() {
           <LeaseCalculator onOpenPrintModal={handleOpenPrintModal} />
         )}
       </main>
-
-      {/* Cross-platform Footer */}
-      <footer className="bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 py-4 text-center text-xs border-t border-slate-200 dark:border-slate-800 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>{t('footerText')}</span>
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
-              Offline Storage Active
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
-              {activeDesignSystem.toUpperCase()} DESIGN
-            </span>
-          </div>
-        </div>
-      </footer>
 
       {/* Modals */}
       <UnitConverterModal
@@ -307,11 +239,6 @@ function MainApp() {
       <PermissionsModal
         isOpen={isPermissionsOpen}
         onClose={() => setIsPermissionsOpen(false)}
-      />
-
-      <ExportPackagingModal
-        isOpen={isPackagingOpen}
-        onClose={() => setIsPackagingOpen(false)}
       />
     </div>
   );

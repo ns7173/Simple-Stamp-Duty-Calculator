@@ -8,7 +8,6 @@ import {
   FolderArchive,
   ShieldCheck,
   Smartphone,
-  Laptop,
   Bookmark,
 } from 'lucide-react';
 import { useThemeLanguage } from '../context/ThemeLanguageContext';
@@ -18,7 +17,7 @@ interface Props {
   onOpenUnitConverter: () => void;
   onOpenOfflineBackup: () => void;
   onOpenPermissions: () => void;
-  onOpenPackaging: () => void;
+  onOpenPackaging?: () => void;
   onOpenSavedCalculations?: () => void;
   savedCalculationsCount?: number;
 }
@@ -27,12 +26,11 @@ export const Header: React.FC<Props> = ({
   onOpenUnitConverter,
   onOpenOfflineBackup,
   onOpenPermissions,
-  onOpenPackaging,
   onOpenSavedCalculations,
   savedCalculationsCount = 0,
 }) => {
   const { language, toggleLanguage, theme, toggleTheme, t } = useThemeLanguage();
-  const { detectedPlatform, activeDesignSystem, isInstallable, promptInstall } = usePlatform();
+  const { activeDesignSystem, isInstallable, promptInstall } = usePlatform();
 
   return (
     <header
@@ -54,26 +52,9 @@ export const Header: React.FC<Props> = ({
               <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h1 className="font-extrabold text-sm sm:text-lg lg:text-xl text-slate-900 dark:text-white tracking-tight leading-snug">
-                  {t('appTitle')}
-                </h1>
-                <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
-                  {t('appTagline')}
-                </span>
-                <span
-                  className="hidden md:inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 cursor-pointer"
-                  onClick={onOpenPackaging}
-                  title="Cross-platform Android & Windows compatibility ready"
-                >
-                  {detectedPlatform === 'android' ? (
-                    <Smartphone className="w-3 h-3" />
-                  ) : (
-                    <Laptop className="w-3 h-3" />
-                  )}
-                  <span>{detectedPlatform.toUpperCase()} READY</span>
-                </span>
-              </div>
+              <h1 className="font-extrabold text-sm sm:text-lg lg:text-xl text-slate-900 dark:text-white tracking-tight leading-snug">
+                {t('appTitle')}
+              </h1>
             </div>
           </div>
 
@@ -130,21 +111,6 @@ export const Header: React.FC<Props> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span className="hidden md:inline">Permissions</span>
-            </button>
-
-            {/* Packaging Hub (APK / Windows EXE) */}
-            <button
-              type="button"
-              onClick={onOpenPackaging}
-              className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all cursor-pointer"
-              title="Android APK & Windows EXE Export Hub"
-            >
-              {detectedPlatform === 'android' ? (
-                <Smartphone className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              ) : (
-                <Laptop className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              )}
-              <span className="hidden lg:inline">APK / EXE</span>
             </button>
 
             {/* Unit Converter Modal Button */}

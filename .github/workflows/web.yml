@@ -1,0 +1,45 @@
+name: Build Web App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    name: Build & Package Web Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Project Dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
+
+      - name: Build Production Web App
+        run: npm run build
+
+      - name: Upload Web App Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stamp-duty-calculator-web-build
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30

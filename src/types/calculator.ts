@@ -19,64 +19,15 @@ export interface RateUnitDefinition {
 }
 
 // Tab 1: Plot State
-export interface PlotState {
-  landArea: number | '';
-  landAreaUnit: AreaUnit;
-  guidelineRate: number | '';
-  guidelineRateUnit: RateUnit;
-  considerationValue: number | '';
-  considerationMode: 'direct' | 'calculated';
-  considerationRate: number | '';
-  considerationRateUnit: 'sqft' | 'sqmt';
-  stampDutyBase: CalculationBase;
-  stampDutyRate: number | ''; // Stamp Duty %
-  registrationFeeBase: CalculationBase;
-  registrationFeeRate: number | ''; // Registration Fee %
-  additionalCessPercent: number; // Surcharge / Local Cess %
-  fixedCharges: number; // Fixed fee in Rs.
-  scanningFee?: number | ''; // Scanning fee in Rs.
-  advocateFee?: number | ''; // Advocate fee in Rs. (default: 10,000)
-}
+export type { PlotState } from '../tabs/plot/plotState';
 
 // Tab 2: Building State
-export type BuildingType = 'residential' | 'commercial_shop' | 'office' | 'godown' | 'industrial';
-export type ConstructionInputMode = 'complete' | 'floorwise';
-
-export interface FloorItem {
-  id: string;
-  name: string; // e.g., "Ground Floor", "First Floor"
-  area: number | '';
-  rate: number | ''; // Floor-specific rate override, or empty for default
-}
-
-export interface BuildingState {
-  buildingType: BuildingType;
-  // Land Component
-  landArea: number | '';
-  landAreaUnit: AreaUnit;
-  landGuidelineRate: number | '';
-  landGuidelineRateUnit: RateUnit;
-  // Construction Component
-  constructionMode: ConstructionInputMode;
-  completeConstructedArea: number | '';
-  completeConstructionUnit: 'sqft' | 'sqmt';
-  floors: FloorItem[];
-  floorAreaUnit: 'sqft' | 'sqmt';
-  defaultConstructionRate: number | '';
-  defaultConstructionRateUnit: 'sqft' | 'sqmt';
-  // Consideration
-  considerationValue: number | '';
-  considerationMode: 'direct' | 'calculated';
-  // Duty & Fees
-  stampDutyBase: CalculationBase;
-  stampDutyRate: number | '';
-  registrationFeeBase: CalculationBase;
-  registrationFeeRate: number | '';
-  additionalCessPercent: number;
-  fixedCharges: number;
-  scanningFee?: number | '';
-  advocateFee?: number | '';
-}
+export type {
+  BuildingType,
+  ConstructionInputMode,
+  FloorItem,
+  BuildingState,
+} from '../tabs/building/buildingState';
 
 // Tab 3: Flat State
 export interface FlatState {

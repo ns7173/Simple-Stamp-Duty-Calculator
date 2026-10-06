@@ -76,20 +76,9 @@ export const TabsNav: React.FC<Props> = ({ activeTab, onTabChange }) => {
                 <Icon className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                      isActive
-                        ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    Tab {tab.number}
-                  </span>
-                  <span className="font-bold text-xs sm:text-sm truncate">
-                    {tab.label}
-                  </span>
-                </div>
+                <span className="font-bold text-xs sm:text-sm truncate block">
+                  {tab.label}
+                </span>
                 <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                   {tab.subtitle}
                 </div>

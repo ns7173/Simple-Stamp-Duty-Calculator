@@ -3,9 +3,16 @@ import {
   convertArea,
   formatINR,
   numberToIndianWords,
-} from '../utils/units';
-import { CalculationBase, ValuationResult, ActiveTab } from '../types/calculator';
-import { CalculationSummaryCard } from './CalculationSummaryCard';
+} from '../../utils/units';
+import { ValuationResult, ActiveTab, CalculationBase } from '../../types/calculator';
+import { CalculationSummaryCard } from '../../components/CalculationSummaryCard';
+import {
+  FloorType,
+  DiscountApplyOn,
+  FlatFormState,
+  BLANK_FLAT_STATE,
+} from './flatState';
+export type { FloorType, DiscountApplyOn, FlatFormState };
 import {
   Building2,
   Calculator,
@@ -18,47 +25,6 @@ import {
   Info,
   Receipt,
 } from 'lucide-react';
-
-export type FloorType = 'ground' | 'basement_first' | 'second_plus' | 'custom';
-export type DiscountApplyOn = 'construction_only' | 'guideline_only' | 'both';
-
-export interface FlatFormState {
-  floorType: FloorType;
-  customDiscountPercent: number | '';
-  discountApplyOn: DiscountApplyOn;
-  guidelineRate: number | '';
-  guidelineRateUnit: 'sqft' | 'sqmt';
-  constructionRate: number | '';
-  constructionRateUnit: 'sqft' | 'sqmt';
-  builtUpArea: number | '';
-  builtUpAreaUnit: 'sqft' | 'sqmt';
-  considerationValue: number | '';
-  stampDutyBase: CalculationBase;
-  stampDutyRate: number | '';
-  registrationFeeBase: CalculationBase;
-  registrationFeeRate: number | '';
-  scanningFee?: number | '';
-  advocateFee?: number | '';
-}
-
-const BLANK_FLAT_STATE: FlatFormState = {
-  floorType: 'ground',
-  customDiscountPercent: '',
-  discountApplyOn: 'construction_only', // शासन के वर्तमान नियमानुसार केवल उपबंध निर्माण दर में छूट
-  guidelineRate: '',
-  guidelineRateUnit: 'sqft',
-  constructionRate: '',
-  constructionRateUnit: 'sqft',
-  builtUpArea: '',
-  builtUpAreaUnit: 'sqft',
-  considerationValue: '',
-  stampDutyBase: 'higher',
-  stampDutyRate: '',
-  registrationFeeBase: 'higher',
-  registrationFeeRate: '',
-  scanningFee: '',
-  advocateFee: 10000,
-};
 
 interface Props {
   state?: FlatFormState;
@@ -330,7 +296,7 @@ export const FlatCalculator: React.FC<Props> = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              Tab 3: Flat (बहुमंजिला भवन या कमर्शियल कॉम्प्लेक्स - प्रकोष्ठ स्वामित्व)
+              Flat (बहुमंजिला भवन या कमर्शियल कॉम्प्लेक्स - प्रकोष्ठ स्वामित्व)
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               बिल्टअप एरिया आधार: (कलेक्टर गाइडलाइन दर × एरिया) + (उपबंध निर्माण दर × एरिया) = बाजार मूल्य
@@ -479,8 +445,9 @@ export const FlatCalculator: React.FC<Props> = ({
                     </span>
                   )}
                 </div>
+                {/* Full Width Guideline Rate Input Box */}
                 <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
-                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 sm:py-3 text-sm sm:text-base font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -495,12 +462,18 @@ export const FlatCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 sm:py-3 text-base sm:text-lg bg-transparent text-slate-900 dark:text-white outline-none font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
+                </div>
+                {/* Guideline Rate Unit Selector Below Input Box */}
+                <div className="flex items-center justify-between gap-2 mt-1.5 px-0.5">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    दर इकाई (Rate Unit):
+                  </span>
                   <select
                     value={state.guidelineRateUnit}
                     onChange={(e) => updateField('guidelineRateUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all unit-select-btn"
                   >
                     <option value="sqft">/ Sq.ft</option>
                     <option value="sqmt">/ Sq.mt</option>
@@ -530,8 +503,9 @@ export const FlatCalculator: React.FC<Props> = ({
                     </span>
                   )}
                 </div>
+                {/* Full Width Construction Rate Input Box */}
                 <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
-                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
+                  <div className="bg-slate-100 dark:bg-slate-700/90 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 sm:py-3 text-sm sm:text-base font-bold flex items-center shrink-0 border-r border-slate-200 dark:border-slate-700 select-none">
                     Rs.
                   </div>
                   <input
@@ -546,12 +520,18 @@ export const FlatCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 sm:py-3 text-base sm:text-lg bg-transparent text-slate-900 dark:text-white outline-none font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
+                </div>
+                {/* Construction Rate Unit Selector Below Input Box */}
+                <div className="flex items-center justify-between gap-2 mt-1.5 px-0.5">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    दर इकाई (Rate Unit):
+                  </span>
                   <select
                     value={state.constructionRateUnit}
                     onChange={(e) => updateField('constructionRateUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all unit-select-btn"
                   >
                     <option value="sqft">/ Sq.ft</option>
                     <option value="sqmt">/ Sq.mt</option>
@@ -574,6 +554,7 @@ export const FlatCalculator: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1">
                   बिल्टअप एरिया (Built-up Area)
                 </label>
+                {/* Full Width Built-up Area Input Box */}
                 <div className="flex items-stretch rounded-xl overflow-hidden shadow-xs border border-slate-300 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
                   <input
                     type="number"
@@ -587,12 +568,18 @@ export const FlatCalculator: React.FC<Props> = ({
                         e.target.value === '' ? '' : parseFloat(e.target.value) || 0
                       )
                     }
-                    className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base bg-transparent text-slate-900 dark:text-white outline-none font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="w-full px-3.5 py-2.5 sm:py-3 text-base sm:text-lg bg-transparent text-slate-900 dark:text-white outline-none font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
+                </div>
+                {/* Built-up Area Unit Selector Below Input Box */}
+                <div className="flex items-center justify-between gap-2 mt-1.5 px-0.5">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    क्षेत्रफल इकाई (Area Unit):
+                  </span>
                   <select
                     value={state.builtUpAreaUnit}
                     onChange={(e) => updateField('builtUpAreaUnit', e.target.value as 'sqft' | 'sqmt')}
-                    className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[130px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all unit-select-btn"
                   >
                     <option value="sqft">Sq.ft</option>
                     <option value="sqmt">Sq.mt</option>

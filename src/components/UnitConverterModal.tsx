@@ -48,6 +48,7 @@ export const UnitConverterModal: React.FC<Props> = ({ isOpen, onClose }) => {
             Convert any area instantly across standard Indian land measurement units:
           </p>
 
+          {/* Input Box - Full Width */}
           <div className="flex items-stretch rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 shadow-xs focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800 transition-all">
             <input
               type="number"
@@ -58,12 +59,18 @@ export const UnitConverterModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 setValue(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)
               }
               placeholder="Enter value"
-              className="flex-1 min-w-0 px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base font-bold bg-transparent text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="w-full px-3.5 py-2.5 sm:py-3 text-base sm:text-lg font-bold bg-transparent text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
+          </div>
+          {/* Unit Selector Below Input Box */}
+          <div className="flex items-center justify-between gap-2 mt-1.5 px-0.5">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              इकाई (Source Unit):
+            </span>
             <select
               value={fromUnit}
               onChange={(e) => setFromUnit(e.target.value as AreaUnit)}
-              className="bg-slate-100 dark:bg-slate-700/90 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 sm:py-2.5 border-l border-slate-300 dark:border-slate-600 outline-none cursor-pointer shrink-0 max-w-[140px] sm:max-w-none hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors unit-select-btn"
+              className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all unit-select-btn"
             >
               {UNITS.map((u) => (
                 <option key={u.id} value={u.id}>
