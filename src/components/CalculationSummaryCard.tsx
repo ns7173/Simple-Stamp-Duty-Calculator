@@ -140,8 +140,8 @@ TOTAL ESTIMATED PAYABLE:* Rs. ${totalStr}
 Total Value / Assessment Base: ${formatINR(result.totalGovtValue)}
 Consideration / Transaction Value: ${formatINR(result.considerationValue)}
 ──────────────────────
-1. Stamp Duty (${result.stampDutyRate}% on ${result.stampDutyBaseFormula}): ${formatINR(result.stampDutyAmount)}
-2. Registration Fee (${result.registrationFeeRate}% on ${result.registrationFeeBaseFormula}): ${formatINR(result.registrationFeeAmount)}
+1. Stamp Duty: ${formatINR(result.stampDutyAmount)}
+2. Registration Fee: ${formatINR(result.registrationFeeAmount)}
 ${scanningNum > 0 ? `3. Scanning Fee (स्कैनिंग शुल्क): लगभग / Approx ${formatINR(scanningNum)}\n` : ''}${advocateNum > 0 ? `4. Advocate Fees (अधिवक्ता शुल्क): ${formatINR(advocateNum)}\n` : ''}──────────────────────
 *TOTAL ESTIMATED PAYABLE:* ${formatINR(totalPayable)}
 (${numberToIndianWords(totalPayable)})

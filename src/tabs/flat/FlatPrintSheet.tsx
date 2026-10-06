@@ -49,26 +49,6 @@ export const FlatPrintSheet: React.FC<Props> = ({
                   </td>
                 </tr>
               )}
-              {result.landGuidelineRate > 0 && (
-                <tr className="border-b border-slate-200">
-                  <td className="p-2.5 font-medium bg-slate-50">
-                    कलेक्टर गाइडलाइन दर (Guideline Rate):
-                  </td>
-                  <td className="p-2.5 font-mono">
-                    {formatINR(result.landGuidelineRate)}/{result.constructionAreaUnit}
-                  </td>
-                </tr>
-              )}
-              {result.constructionGuidelineRate > 0 && (
-                <tr className="border-b border-slate-200">
-                  <td className="p-2.5 font-medium bg-slate-50">
-                    उपबंध निर्माण दर (Construction Rate):
-                  </td>
-                  <td className="p-2.5 font-mono">
-                    {formatINR(result.constructionGuidelineRate)}/{result.constructionAreaUnit}
-                  </td>
-                </tr>
-              )}
               <tr className="border-b border-slate-200 bg-slate-100/60 font-semibold">
                 <td className="p-2.5">Total Government Guideline Value:</td>
                 <td className="p-2.5 font-mono font-bold text-indigo-950">
@@ -98,21 +78,18 @@ export const FlatPrintSheet: React.FC<Props> = ({
             <thead>
               <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                 <th className="p-2.5">Head of Account / Fee</th>
-                <th className="p-2.5">Rate (%)</th>
                 <th className="p-2.5 text-right">Amount (Rs.)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               <tr>
                 <td className="p-2.5 font-bold">1. Stamp Duty</td>
-                <td className="p-2.5 font-mono">{result.stampDutyRate}%</td>
                 <td className="p-2.5 text-right font-mono font-bold">
                   {formatINR(result.stampDutyAmount)}
                 </td>
               </tr>
               <tr>
                 <td className="p-2.5 font-bold">2. Registration Fees</td>
-                <td className="p-2.5 font-mono">{result.registrationFeeRate}%</td>
                 <td className="p-2.5 text-right font-mono font-bold">
                   {formatINR(result.registrationFeeAmount)}
                 </td>
@@ -122,7 +99,6 @@ export const FlatPrintSheet: React.FC<Props> = ({
                   <td className="p-2.5 font-bold">
                     3. Scanning Charges (स्कैनिंग शुल्क): लगभग / Approx Rs.
                   </td>
-                  <td className="p-2.5 font-mono text-slate-500">लगभग / Approx</td>
                   <td className="p-2.5 text-right font-mono font-bold">
                     लगभग {formatINR(result.scanningFee)}
                   </td>
@@ -131,14 +107,13 @@ export const FlatPrintSheet: React.FC<Props> = ({
               {result.advocateFee !== undefined && result.advocateFee > 0 && (
                 <tr>
                   <td className="p-2.5 font-bold">4. Advocate / Documentation Fees (अधिवक्ता शुल्क)</td>
-                  <td className="p-2.5 font-mono text-slate-500"></td>
                   <td className="p-2.5 text-right font-mono font-bold">
                     {formatINR(result.advocateFee)}
                   </td>
                 </tr>
               )}
               <tr className="bg-slate-900 text-white font-bold text-sm">
-                <td className="p-3" colSpan={2}>
+                <td className="p-3">
                   TOTAL ESTIMATED PAYABLE (STAMP + REGISTRATION + CHARGES)
                 </td>
                 <td className="p-3 text-right font-mono font-extrabold text-base">

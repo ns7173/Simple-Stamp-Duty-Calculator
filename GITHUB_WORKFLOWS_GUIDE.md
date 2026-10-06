@@ -8,8 +8,8 @@
 
 | प्लेटफ़ॉर्म | वर्कफ़्लो फ़ाइल | आउटपुट फ़ाइल | विवरण |
 | :--- | :--- | :--- | :--- |
-| **Android APK** | `.github/workflows/main.yml` | `app-debug.apk` | Capacitor + Android Gradle (Node 22 + Java 17) |
-| **Windows Desktop EXE** | `.github/workflows/mainexe.yml` | `.exe` (Installer & Portable) | Electron + electron-builder |
+| **Android APK** | `.github/workflows/main.yml` | `app-debug.apk` | Capacitor + Android Gradle (Node 22 + Java 21) |
+| **Windows Installation EXE** | `.github/workflows/windows.yml` | `.exe` (Installer & Portable) | Electron + electron-builder |
 | **Web App** | `.github/workflows/web.yml` | `dist/` (Production Web Build) | Vite Production Build (HTML, CSS, JS) |
 
 ---

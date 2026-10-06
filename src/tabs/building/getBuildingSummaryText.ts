@@ -21,8 +21,8 @@ export function getBuildingSummaryText(
 ${dateStr ? `*Date:* ${dateStr}\n` : ''}Total Value / Assessment Base: ${formatINR(result.totalGovtValue)}
 Consideration / Transaction Value: ${formatINR(result.considerationValue)}
 ──────────────────────
-1. Stamp Duty (${result.stampDutyRate}% on ${result.stampDutyBaseFormula || 'Higher'}): ${formatINR(result.stampDutyAmount)}
-2. Registration Fee (${result.registrationFeeRate}% on ${result.registrationFeeBaseFormula || 'Higher'}): ${formatINR(result.registrationFeeAmount)}
+1. Stamp Duty: ${formatINR(result.stampDutyAmount)}
+2. Registration Fee: ${formatINR(result.registrationFeeAmount)}
 ${scanningLine}${advocateLine}──────────────────────
 *TOTAL ESTIMATED PAYABLE:* ${formatINR(total)}
 (${numberToIndianWords(total)})`.trim();

@@ -1,7 +1,7 @@
 {
-  "name": "react-example",
-  "description": "A simple stamp duty calculator application",
-  "author": "Your Name",
+  "name": "stamp-duty-calculator",
+  "description": "Property Valuation & Stamp Duty Calculator",
+  "author": "Stamp Duty Calculator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
